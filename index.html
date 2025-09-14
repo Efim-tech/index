@@ -141,6 +141,7 @@
                         const finalResult = rollD20(); // Генерируем результат
                         applyRandomRotation(); // Финальный поворот
                         resultElement.textContent = `Выпало: ${finalResult}!`;
+                        console.log("Roll result:", finalResult);
 
                         // 4. Ждем немного, отправляем результат в бота и закрываем Mini App
                         setTimeout(() => {
@@ -153,7 +154,10 @@
                                 // Можете добавить любую другую мета-информацию
                                 original_prompt: "Бросок инициативы в бою!" // Например, чтобы ИИ понимал контекст
                             };
-
+                            if (finalResult === undefined || finalResult === null) {
+                                alert("Ошибка броска кубика!");
+                                return;
+                            }
                             // Отправляем данные обратно в бота и закрываем Mini App
                             tg.sendData(JSON.stringify(webAppData));
                             tg.close();
@@ -178,3 +182,4 @@
     </script>
 </body>
 </html>
+
