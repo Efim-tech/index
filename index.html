@@ -42,38 +42,50 @@
             transition: transform 2s ease-out;
             transform: rotateX(60deg) rotateZ(45deg);
         }
-        /* Упрощенные грани D20 */
+
+        /* Треугольные грани для D20 */
         .face {
             position: absolute;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(45deg, #ff6b6b, #ffa86b);
-            border-radius: 8px;
+            width: 0;
+            height: 0;
+            border-left: 35px solid transparent;
+            border-right: 35px solid transparent;
+            border-bottom: 60px solid #ff6b6b;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: bold;
             color: white;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            box-shadow: 
-                inset 0 0 15px rgba(255,255,255,0.3),
-                0 0 10px rgba(0,0,0,0.3);
-            border: 2px solid rgba(255,255,255,0.3);
-            opacity: 0.9;
+            transform-origin: 50% 100%;
         }
 
-        /* Упрощенное расположение граней для видимости */
-        .face:nth-child(1) { transform: translateZ(30px); }
-        .face:nth-child(2) { transform: translateZ(-30px) rotateY(180deg); }
-        .face:nth-child(3) { transform: translateX(-30px) rotateY(-90deg); }
-        .face:nth-child(4) { transform: translateX(30px) rotateY(90deg); }
-        .face:nth-child(5) { transform: translateY(-30px) rotateX(90deg); }
-        .face:nth-child(6) { transform: translateY(30px) rotateX(-90deg); }
-        .face:nth-child(7) { transform: translateZ(20px) translateY(-20px) rotateX(45deg); }
-        .face:nth-child(8) { transform: translateZ(20px) translateY(20px) rotateX(-45deg); }
-        .face:nth-child(9) { transform: translateZ(20px) translateX(-20px) rotateY(45deg); }
-        .face:nth-child(10) { transform: translateZ(20px) translateX(20px) rotateY(-45deg); }
+        /* Верхняя часть D20 (5 граней) */
+        .face:nth-child(1) { transform: translateY(-30px) rotateX(30deg); }
+        .face:nth-child(2) { transform: rotateY(72deg) translateY(-30px) rotateX(30deg); }
+        .face:nth-child(3) { transform: rotateY(144deg) translateY(-30px) rotateX(30deg); }
+        .face:nth-child(4) { transform: rotateY(216deg) translateY(-30px) rotateX(30deg); }
+        .face:nth-child(5) { transform: rotateY(288deg) translateY(-30px) rotateX(30deg); }
+
+        /* Средняя часть D20 (10 граней) */
+        .face:nth-child(6) { transform: rotateY(0deg) translateY(15px) rotateX(-30deg); }
+        .face:nth-child(7) { transform: rotateY(36deg) translateY(15px) rotateX(-30deg); }
+        .face:nth-child(8) { transform: rotateY(72deg) translateY(15px) rotateX(-30deg); }
+        .face:nth-child(9) { transform: rotateY(108deg) translateY(15px) rotateX(-30deg); }
+        .face:nth-child(10) { transform: rotateY(144deg) translateY(15px) rotateX(-30deg); }
+        .face:nth-child(11) { transform: rotateY(180deg) translateY(15px) rotateX(-30deg); }
+        .face:nth-child(12) { transform: rotateY(216deg) translateY(15px) rotateX(-30deg); }
+        .face:nth-child(13) { transform: rotateY(252deg) translateY(15px) rotateX(-30deg); }
+        .face:nth-child(14) { transform: rotateY(288deg) translateY(15px) rotateX(-30deg); }
+        .face:nth-child(15) { transform: rotateY(324deg) translateY(15px) rotateX(-30deg); }
+
+        /* Нижняя часть D20 (5 граней) */
+        .face:nth-child(16) { transform: rotateY(0deg) translateY(60px) rotateX(150deg); }
+        .face:nth-child(17) { transform: rotateY(72deg) translateY(60px) rotateX(150deg); }
+        .face:nth-child(18) { transform: rotateY(144deg) translateY(60px) rotateX(150deg); }
+        .face:nth-child(19) { transform: rotateY(216deg) translateY(60px) rotateX(150deg); }
+        .face:nth-child(20) { transform: rotateY(288deg) translateY(60px) rotateX(150deg); }
 
         /* Анимации */
         @keyframes roll {
@@ -297,4 +309,5 @@
     </script>
 </body>
 </html>
+
 
