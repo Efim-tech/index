@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Кубик Мастера - D20</title>
+    <title>Game Master - Все кубики</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
@@ -18,39 +18,83 @@
             min-height: 100vh;
             color: white;
             text-align: center;
-            overflow: hidden;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 400px;
         }
 
         .header {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             z-index: 10;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 5px;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-button {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            padding: 10px 15px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .tab-button.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        .dice-content {
+            display: none;
+        }
+
+        .dice-content.active {
+            display: block;
         }
 
         .dice-scene {
             perspective: 1000px;
             width: 200px;
             height: 200px;
-            margin: 2rem 0;
+            margin: 1.5rem auto;
             position: relative;
         }
-        
-        .d20 {
-            width: 120px;
-            height: 120px;
+
+        .dice {
+            width: 100px;
+            height: 100px;
             position: relative;
             transform-style: preserve-3d;
             transition: transform 2s ease-out;
-            transform: rotateX(60deg) rotateZ(45deg);
+            margin: 0 auto;
         }
 
-        /* Треугольные грани для D20 */
+        /* Стили для разных кубиков */
+        .d4 { transform: rotateX(60deg) rotateZ(45deg); }
+        .d6 { transform: rotateX(45deg) rotateZ(45deg); }
+        .d8 { transform: rotateX(60deg) rotateZ(45deg); }
+        .d10 { transform: rotateX(60deg) rotateZ(45deg); }
+        .d12 { transform: rotateX(60deg) rotateZ(45deg); }
+        .d20 { transform: rotateX(60deg) rotateZ(45deg); }
+
         .face {
             position: absolute;
-            width: 0;
-            height: 0;
-            border-left: 35px solid transparent;
-            border-right: 35px solid transparent;
-            border-bottom: 60px solid #ff6b6b;
+            background: linear-gradient(45deg, #ff6b6b, #ffa86b);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -58,173 +102,197 @@
             font-weight: bold;
             color: white;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-            transform-origin: 50% 100%;
+            border: 2px solid rgba(255,255,255,0.3);
         }
 
-        /* Верхняя часть D20 (5 граней) */
-        .face:nth-child(1) { transform: translateY(-30px) rotateX(30deg); }
-        .face:nth-child(2) { transform: rotateY(72deg) translateY(-30px) rotateX(30deg); }
-        .face:nth-child(3) { transform: rotateY(144deg) translateY(-30px) rotateX(30deg); }
-        .face:nth-child(4) { transform: rotateY(216deg) translateY(-30px) rotateX(30deg); }
-        .face:nth-child(5) { transform: rotateY(288deg) translateY(-30px) rotateX(30deg); }
-
-        /* Средняя часть D20 (10 граней) */
-        .face:nth-child(6) { transform: rotateY(0deg) translateY(15px) rotateX(-30deg); }
-        .face:nth-child(7) { transform: rotateY(36deg) translateY(15px) rotateX(-30deg); }
-        .face:nth-child(8) { transform: rotateY(72deg) translateY(15px) rotateX(-30deg); }
-        .face:nth-child(9) { transform: rotateY(108deg) translateY(15px) rotateX(-30deg); }
-        .face:nth-child(10) { transform: rotateY(144deg) translateY(15px) rotateX(-30deg); }
-        .face:nth-child(11) { transform: rotateY(180deg) translateY(15px) rotateX(-30deg); }
-        .face:nth-child(12) { transform: rotateY(216deg) translateY(15px) rotateX(-30deg); }
-        .face:nth-child(13) { transform: rotateY(252deg) translateY(15px) rotateX(-30deg); }
-        .face:nth-child(14) { transform: rotateY(288deg) translateY(15px) rotateX(-30deg); }
-        .face:nth-child(15) { transform: rotateY(324deg) translateY(15px) rotateX(-30deg); }
-
-        /* Нижняя часть D20 (5 граней) */
-        .face:nth-child(16) { transform: rotateY(0deg) translateY(60px) rotateX(150deg); }
-        .face:nth-child(17) { transform: rotateY(72deg) translateY(60px) rotateX(150deg); }
-        .face:nth-child(18) { transform: rotateY(144deg) translateY(60px) rotateX(150deg); }
-        .face:nth-child(19) { transform: rotateY(216deg) translateY(60px) rotateX(150deg); }
-        .face:nth-child(20) { transform: rotateY(288deg) translateY(60px) rotateX(150deg); }
-
-        /* Анимации */
-        @keyframes roll {
-            0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
-            100% { transform: rotateX(1080deg) rotateY(720deg) rotateZ(360deg); }
-        }
-
-        .rolling {
-            animation: roll 2s ease-out;
-        }
-
-        @keyframes bounce {
-            0%, 20%, 50%, 80%, 100% { transform: translateY(0) scale(1); }
-            40% { transform: translateY(-30px) scale(1.1); }
-            60% { transform: translateY(-15px) scale(1.05); }
-        }
-
-        .bounce {
-            animation: bounce 0.6s ease-out;
-        }
-
-        .roll-button {
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 18px 36px;
-            font-size: 1.3rem;
-            border-radius: 50px;
-            cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-            transition: all 0.3s ease;
-            margin-top: 2rem;
-            z-index: 10;
-        }
-
-        .roll-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-        }
-
-        .roll-button:disabled {
-            opacity: 0.7;
+        .tab-button.locked {
+            opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
+            background: rgba(255, 255, 255, 0.05) !important;
         }
-
-        .result {
-            font-size: 1.8rem;
-            margin-top: 2rem;
-            min-height: 3rem;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
-            z-index: 10;
+        
+        .tab-button.locked::after {
+            content: " 🔒";
+            font-size: 0.8em;
         }
-
-        .dice-value {
-            font-size: 3rem;
-            color: #ffd700;
-            text-shadow: 0 0 10px #ffd700, 0 0 20px #ffd700;
-        }
-
-        /* Парящие частицы для магического эффекта */
-        .particles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .particle {
-            position: absolute;
-            background: rgba(255, 215, 0, 0.6);
-            border-radius: 50%;
-            animation: float 6s infinite ease-in-out;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0; }
-            50% { transform: translateY(-20px) rotate(180deg); opacity: 1; }
+        
+        .lock-message {
+            background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 10px;
+            margin: 10px 0;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <div class="particles" id="particles"></div>
 
-    <div class="header">
-        <h1>🔮 Магический D20</h1>
-        <p>Коснись судьбы - брось икосаэдр!</p>
-    </div>
+    <div class="container">
+        <div class="header">
+            <h1>🎲 Dice Master</h1>
+            <p>Выбери кубик и брось его!</p>
+        </div>
 
-    <div class="dice-scene">
-        <div class="d20" id="dice">
-            <!-- 20 граней D20 (икосаэдра) -->
-            <div class="face">1</div>
-            <div class="face">2</div>
-            <div class="face">3</div>
-            <div class="face">4</div>
-            <div class="face">5</div>
-            <div class="face">6</div>
-            <div class="face">7</div>
-            <div class="face">8</div>
-            <div class="face">9</div>
-            <div class="face">10</div>
-            <div class="face">11</div>
-            <div class="face">12</div>
-            <div class="face">13</div>
-            <div class="face">14</div>
-            <div class="face">15</div>
-            <div class="face">16</div>
-            <div class="face">17</div>
-            <div class="face">18</div>
-            <div class="face">19</div>
-            <div class="face">20</div>
+        <div class="tabs">
+            <button class="tab-button locked" data-tab="d4">D4</button>
+            <button class="tab-button locked" data-tab="d6">D6</button>
+            <button class="tab-button locked" data-tab="d8">D8</button>
+            <button class="tab-button locked" data-tab="d10">D10</button>
+            <button class="tab-button locked" data-tab="d12">D12</button>
+            <button class="tab-button locked" data-tab="d20">D20</button>
+        </div>
+
+        <div id="lockMessage" class="lock-message" style="display: none;">
+            ⚠️ Этот кубик недоступен для броска. Бот выберет нужный кубик автоматически.
+        </div>
+
+        <!-- D4 -->
+        <div class="dice-content" id="d4-content">
+            <div class="dice-scene">
+                <div class="dice d4" id="d4-dice">
+                    <div class="face">1</div>
+                    <div class="face">2</div>
+                    <div class="face">3</div>
+                    <div class="face">4</div>
+                </div>
+            </div>
+            <div class="result">
+                <span class="dice-value" id="d4-value">⚡</span>
+            </div>
+            <button class="roll-button" data-dice="d4" disabled>🎲 Бросить D4</button>
+        </div>
+
+        <!-- D6 -->
+        <div class="dice-content" id="d6-content">
+            <div class="dice-scene">
+                <div class="dice d6" id="d6-dice">
+                    <div class="face">1</div>
+                    <div class="face">2</div>
+                    <div class="face">3</div>
+                    <div class="face">4</div>
+                    <div class="face">5</div>
+                    <div class="face">6</div>
+                </div>
+            </div>
+            <div class="result">
+                <span class="dice-value" id="d6-value">⚡</span>
+            </div>
+            <button class="roll-button" data-dice="d6" disabled>🎲 Бросить D6</button>
+        </div>
+
+        <!-- D8 -->
+        <div class="dice-content" id="d8-content">
+            <div class="dice-scene">
+                <div class="dice d8" id="d8-dice">
+                    <div class="face">1</div>
+                    <div class="face">2</div>
+                    <div class="face">3</div>
+                    <div class="face">4</div>
+                    <div class="face">5</div>
+                    <div class="face">6</div>
+                    <div class="face">7</div>
+                    <div class="face">8</div>
+                </div>
+            </div>
+            <div class="result">
+                <span class="dice-value" id="d8-value">⚡</span>
+            </div>
+            <button class="roll-button" data-dice="d8" disabled>🎲 Бросить D8</button>
+        </div>
+
+        <!-- D10 -->
+        <div class="dice-content" id="d10-content">
+            <div class="dice-scene">
+                <div class="dice d10" id="d10-dice">
+                    <div class="face">1</div>
+                    <div class="face">2</div>
+                    <div class="face">3</div>
+                    <div class="face">4</div>
+                    <div class="face">5</div>
+                    <div class="face">6</div>
+                    <div class="face">7</div>
+                    <div class="face">8</div>
+                    <div class="face">9</div>
+                    <div class="face">10</div>
+                </div>
+            </div>
+            <div class="result">
+                <span class="dice-value" id="d10-value">⚡</span>
+            </div>
+            <button class="roll-button" data-dice="d10" disabled>🎲 Бросить D10</button>
+        </div>
+
+        <!-- D12 -->
+        <div class="dice-content" id="d12-content">
+            <div class="dice-scene">
+                <div class="dice d12" id="d12-dice">
+                    <div class="face">1</div>
+                    <div class="face">2</div>
+                    <div class="face">3</div>
+                    <div class="face">4</div>
+                    <div class="face">5</div>
+                    <div class="face">6</div>
+                    <div class="face">7</div>
+                    <div class="face">8</div>
+                    <div class="face">9</div>
+                    <div class="face">10</div>
+                    <div class="face">11</div>
+                    <div class="face">12</div>
+                </div>
+            </div>
+            <div class="result">
+                <span class="dice-value" id="d12-value">⚡</span>
+            </div>
+            <button class="roll-button" data-dice="d12" disabled>🎲 Бросить D12</button>
+        </div>
+
+        <!-- D20 -->
+        <div class="dice-content" id="d20-content">
+            <div class="dice-scene">
+                <div class="dice d20" id="d20-dice">
+                    <div class="face">1</div>
+                    <div class="face">2</div>
+                    <div class="face">3</div>
+                    <div class="face">4</div>
+                    <div class="face">5</div>
+                    <div class="face">6</div>
+                    <div class="face">7</div>
+                    <div class="face">8</div>
+                    <div class="face">9</div>
+                    <div class="face">10</div>
+                    <div class="face">11</div>
+                    <div class="face">12</div>
+                    <div class="face">13</div>
+                    <div class="face">14</div>
+                    <div class="face">15</div>
+                    <div class="face">16</div>
+                    <div class="face">17</div>
+                    <div class="face">18</div>
+                    <div class="face">19</div>
+                    <div class="face">20</div>
+                </div>
+            </div>
+            <div class="result">
+                <span class="dice-value" id="d20-value">⚡</span>
+            </div>
+            <button class="roll-button" data-dice="d20" disabled>🎲 Бросить D20</button>
         </div>
     </div>
-
-    <div class="result" id="result">
-        <span class="dice-value" id="diceValue">⚡</span>
-    </div>
-
-    <button class="roll-button" id="rollButton">🎲 Бросить D20</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.BackButton.hide();
 
-        const diceElement = document.getElementById('dice');
-        const resultElement = document.getElementById('result');
-        const diceValueElement = document.getElementById('diceValue');
-        const rollButton = document.getElementById('rollButton');
-        const particlesContainer = document.getElementById('particles');
-
+        // Получаем параметр из URL (какой кубик активировать)
+        const urlParams = new URLSearchParams(window.location.search);
+        const allowedDice = urlParams.get('dice') || 'd20'; // По умолчанию d20
+        
         // Создаем магические частицы
         function createParticles() {
+            const particlesContainer = document.getElementById('particles');
             for (let i = 0; i < 20; i++) {
                 const particle = document.createElement('div');
                 particle.className = 'particle';
@@ -240,74 +308,143 @@
 
         createParticles();
 
-        function rollD20() {
-            return Math.floor(Math.random() * 20) + 1;
+        // Активируем только разрешенный кубик
+        function activateAllowedDice(diceType) {
+            // Деактивируем все
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.add('locked');
+                btn.classList.remove('active');
+            });
+            document.querySelectorAll('.dice-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.querySelectorAll('.roll-button').forEach(btn => {
+                btn.disabled = true;
+            });
+            
+            // Активируем разрешенный
+            const allowedButton = document.querySelector(`[data-tab="${diceType}"]`);
+            const allowedContent = document.getElementById(`${diceType}-content`);
+            const allowedRollButton = document.querySelector(`[data-dice="${diceType}"]`);
+            
+            if (allowedButton && allowedContent && allowedRollButton) {
+                allowedButton.classList.remove('locked');
+                allowedButton.classList.add('active');
+                allowedContent.classList.add('active');
+                allowedRollButton.disabled = false;
+                
+                document.getElementById('lockMessage').style.display = 'none';
+            }
         }
 
-        function applyRandomRotation() {
+        // Управление вкладками (только для просмотра)
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                
+                if (button.classList.contains('locked')) {
+                    // Показываем сообщение о блокировке
+                    document.getElementById('lockMessage').style.display = 'block';
+                    setTimeout(() => {
+                        document.getElementById('lockMessage').style.display = 'none';
+                    }, 3000);
+                    return;
+                }
+                
+                // Деактивируем все контенты
+                document.querySelectorAll('.dice-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+                
+                // Активируем выбранную
+                document.getElementById(`${tabId}-content`).classList.add('active');
+            });
+        });
+
+        // Функции броска
+        function rollDice(sides) {
+            return Math.floor(Math.random() * sides) + 1;
+        }
+
+        function applyRandomRotation(diceElement) {
             const randomX = Math.floor(Math.random() * 360);
             const randomY = Math.floor(Math.random() * 360);
             const randomZ = Math.floor(Math.random() * 360);
             return `rotateX(${randomX}deg) rotateY(${randomY}deg) rotateZ(${randomZ}deg)`;
         }
 
-        rollButton.addEventListener('click', () => {
-            rollButton.disabled = true;
-            diceValueElement.textContent = '🎲';
-            resultElement.style.opacity = '0.5';
-
-            // Анимация броска
-            diceElement.classList.add('rolling');
-            diceElement.style.animation = 'roll 2s ease-out';
-
-            let rolls = 0;
-            const maxRolls = 6;
-            const rollInterval = setInterval(() => {
-                diceElement.style.transform = applyRandomRotation();
-                rolls++;
+        // Обработчик бросков
+        document.querySelectorAll('.roll-button').forEach(button => {
+            button.addEventListener('click', () => {
+                if (button.disabled) return;
                 
-                if (rolls >= maxRolls) {
-                    clearInterval(rollInterval);
+                const diceType = button.getAttribute('data-dice');
+                const diceElement = document.getElementById(`${diceType}-dice`);
+                const valueElement = document.getElementById(`${diceType}-value`);
+                const sides = parseInt(diceType.substring(1));
+                
+                button.disabled = true;
+                valueElement.textContent = '🎲';
+                
+                // Анимация броска
+                diceElement.classList.add('rolling');
+                
+                let rolls = 0;
+                const maxRolls = 6;
+                const rollInterval = setInterval(() => {
+                    diceElement.style.transform = applyRandomRotation(diceElement);
+                    rolls++;
                     
-                    setTimeout(() => {
-                        const finalResult = rollD20();
+                    if (rolls >= maxRolls) {
+                        clearInterval(rollInterval);
                         
-                        diceElement.classList.remove('rolling');
-                        diceElement.classList.add('bounce');
-                        diceValueElement.textContent = finalResult;
-                        resultElement.style.opacity = '1';
-
-                        // Цвет результата
-                        if (finalResult >= 17) {
-                            diceValueElement.style.color = '#4ecdc4'; // Критический успех
-                        } else if (finalResult >= 10) {
-                            diceValueElement.style.color = '#ffd700'; // Успех
-                        } else if (finalResult >= 4) {
-                            diceValueElement.style.color = '#ffa86b'; // Нейтрально
-                        } else {
-                            diceValueElement.style.color = '#ff6b6b'; // Провал
-                        }
-
                         setTimeout(() => {
-                            tg.sendData(JSON.stringify({
-                                action: "dice_roll",
-                                dice_type: "d20",
-                                value: finalResult,
-                                original_prompt: "Бросок кубика D20"
-                            }));
-                            tg.close();
-                        }, 1500);
-                    }, 100);
-                }
-            }, 300);
+                            const finalResult = rollDice(sides);
+                            
+                            diceElement.classList.remove('rolling');
+                            diceElement.classList.add('bounce');
+                            valueElement.textContent = finalResult;
+                            
+                            // Цвет результата
+                            const percent = (finalResult / sides) * 100;
+                            if (percent >= 80) {
+                                valueElement.style.color = '#4ecdc4';
+                            } else if (percent >= 50) {
+                                valueElement.style.color = '#ffd700';
+                            } else if (percent >= 20) {
+                                valueElement.style.color = '#ffa86b';
+                            } else {
+                                valueElement.style.color = '#ff6b6b';
+                            }
+                            
+                            setTimeout(() => {
+                                tg.sendData(JSON.stringify({
+                                    action: "dice_roll",
+                                    dice_type: diceType,
+                                    value: finalResult,
+                                    original_prompt: `Бросок кубика ${diceType.toUpperCase()}`
+                                }));
+                                tg.close();
+                            }, 1500);
+                        }, 100);
+                    }
+                }, 300);
+            });
         });
 
-        // Начальная анимация
+        // Инициализация
+        activateAllowedDice(allowedDice);
+        
+        // Начальная анимация для активного кубика
         setTimeout(() => {
-            diceElement.classList.add('bounce');
+            const activeDice = document.querySelector('.dice-content.active .dice');
+            if (activeDice) {
+                activeDice.classList.add('bounce');
+            }
         }, 500);
     </script>
 </body>
 </html>
+
 
 
