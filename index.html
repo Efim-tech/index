@@ -283,30 +283,13 @@
 
     <script>
         const tg = window.Telegram.WebApp;
-
-        // === ОТЛАДОЧНАЯ ИНФОРМАЦИЯ ===
-        console.log("=== TELEGRAM WEBAPP DEBUG ===");
-        console.log("WebApp version:", tg.version);
-        console.log("Platform:", tg.platform);
-        console.log("sendData available:", typeof tg.sendData === 'function');
-        console.log("Init data:", tg.initDataUnsafe);
-
-        // === ОБРАБОТЧИКИ СОБЫТИЙ ===
-        tg.onEvent('webAppReady', () => {
-            console.log('WebApp is ready!');
-        });
-
-        tg.onEvent('webAppClose', (event) => {
-            console.log('WebApp closing:', event);
-        });
-
         tg.expand();
         tg.BackButton.hide();
 
-        // Получаем параметр из URL
+        // Получаем параметр из URL (какой кубик активировать)
         const urlParams = new URLSearchParams(window.location.search);
-        const allowedDice = urlParams.get('dice') || 'd20';
-
+        const allowedDice = urlParams.get('dice') || 'd20'; // По умолчанию d20
+        
         // Создаем магические частицы
         function createParticles() {
             const particlesContainer = document.getElementById('particles');
@@ -390,27 +373,7 @@
             return `rotateX(${randomX}deg) rotateY(${randomY}deg) rotateZ(${randomZ}deg)`;
         }
 
-        // Функция для отправки данных
-        function sendDataToBot(data) {
-            console.log("Attempting to send data:", data);
-            
-            try {
-                if (typeof tg.sendData === 'function') {
-                    const dataString = JSON.stringify(data);
-                    tg.sendData(dataString);
-                    console.log("✅ Data sent successfully");
-                    return true;
-                } else {
-                    console.error("❌ tg.sendData is not a function");
-                    return false;
-                }
-            } catch (error) {
-                console.error("❌ Error sending data:", error);
-                return false;
-            }
-        }
-
-        // Обработчик бросков - ИСПРАВЛЕННАЯ ВЕРСИЯ
+        // Обработчик бросков
         document.querySelectorAll('.roll-button').forEach(button => {
             button.addEventListener('click', () => {
                 if (button.disabled) return;
@@ -435,50 +398,35 @@
                     if (rolls >= maxRolls) {
                         clearInterval(rollInterval);
                         
-                        // Убираем вложенный setTimeout - это важно!
-                        const finalResult = rollDice(sides);
-                        
-                        diceElement.classList.remove('rolling');
-                        diceElement.classList.add('bounce');
-                        valueElement.textContent = finalResult;
-                        
-                        console.log("Dice roll result:", finalResult);
-                        
-                        // Цвет результата
-                        const percent = (finalResult / sides) * 100;
-                        if (percent >= 80) {
-                            valueElement.style.color = '#4ecdc4';
-                        } else if (percent >= 50) {
-                            valueElement.style.color = '#ffd700';
-                        } else if (percent >= 20) {
-                            valueElement.style.color = '#ffa86b';
-                        } else {
-                            valueElement.style.color = '#ff6b6b';
-                        }
-                        
-                        // Отправка данных - без вложенного setTimeout
-                        const resultData = {
-                            value: finalResult,
-                            dice_type: diceType,
-                            timestamp: new Date().toISOString()
-                        };
-                        
-                        console.log("Sending data to bot:", resultData);
-                        
-                        // Отправляем данные
-                        if (sendDataToBot(resultData)) {
-                            // Закрываем WebApp через 500ms после успешной отправки
+                        setTimeout(() => {
+                            const finalResult = rollDice(sides);
+                            
+                            diceElement.classList.remove('rolling');
+                            diceElement.classList.add('bounce');
+                            valueElement.textContent = finalResult;
+                            
+                            // Цвет результата
+                            const percent = (finalResult / sides) * 100;
+                            if (percent >= 80) {
+                                valueElement.style.color = '#4ecdc4';
+                            } else if (percent >= 50) {
+                                valueElement.style.color = '#ffd700';
+                            } else if (percent >= 20) {
+                                valueElement.style.color = '#ffa86b';
+                            } else {
+                                valueElement.style.color = '#ff6b6b';
+                            }
+                            
                             setTimeout(() => {
-                                console.log("Closing WebApp...");
+                                tg.sendData(JSON.stringify({
+                                    action: "dice_roll",
+                                    dice_type: diceType,
+                                    value: finalResult,
+                                    original_prompt: `Бросок кубика ${diceType.toUpperCase()}`
+                                }));
                                 tg.close();
-                            }, 500);
-                        } else {
-                            // Если не удалось отправить, все равно закрываем
-                            console.log("Closing WebApp despite send error...");
-                            setTimeout(() => {
-                                tg.close();
-                            }, 1000);
-                        }
+                            }, 1500);
+                        }, 100);
                     }
                 }, 300);
             });
