@@ -446,13 +446,26 @@
                                 };
                                 console.log("Sending data to bot:", resultData);
                                 // Проверяем доступность Telegram WebApp
-                                if (typeof tg.sendData === 'function') {
-                                    tg.sendData(JSON.stringify(resultData));
-                                    console.log("Data sent successfully");
-                                } else {
-                                    console.error("tg.sendData is not a function");
+                                try {
+                                    // ПРАВИЛЬНЫЙ ФОРМАТ - просто строка, не объект
+                                    const dataString = JSON.stringify(resultData);
+                                    console.log("Stringified data:", dataString);
+                                    
+                                    if (typeof tg.sendData === 'function') {
+                                        tg.sendData(dataString);
+                                        console.log("Data sent successfully!");
+                                        
+                                        // Даем время на отправку перед закрытием
+                                        setTimeout(() => {
+                                            tg.close();
+                                        }, 500);
+                                        
+                                    } else {
+                                        console.error("ERROR: tg.sendData is not available");
+                                    }
+                                } catch (error) {
+                                    console.error("Error sending data:", error);
                                 }
-                                tg.close();
                             }, 1500);
                         }, 100);
                     }
@@ -473,6 +486,7 @@
     </script>
 </body>
 </html>
+
 
 
 
