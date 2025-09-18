@@ -284,23 +284,40 @@
     <script>
         const tg = window.Telegram.WebApp;
 
-        console.log("=== TELEGRAM WEBAPP DEBUG ===");
-        console.log("=== TELEGRAM WEBAPP DEBUG ===");
-        console.log("Telegram WebApp initialized:", tg);
-        console.log("=== TELEGRAM WEBAPP DEBUG ===");
-        console.log("Telegram WebApp initialized:", tg);
-        console.log("WebApp version:", tg.version);
-        console.log("Platform:", tg.platform);
-        console.log("Theme params:", tg.themeParams);
-        console.log("Init data:", tg.initDataUnsafe);
-        
-        // Проверяем доступность sendData
+                // === ОБРАБОТЧИКИ СОБЫТИЙ ===
+        tg.onEvent('viewportChanged', (event) => {
+            console.log('Viewport changed:', event);
+        });
+
+        tg.onEvent('themeChanged', () => {
+            console.log('Theme changed');
+        });
+
+        // Важное событие - когда WebApp готов к работе
+        tg.onEvent('webAppReady', () => {
+            console.log('WebApp is ready!');
+            console.log('Platform:', tg.platform);
+            console.log('Version:', tg.version);
+        });
+
+        // Событие закрытия WebApp
+        tg.onEvent('webAppClose', (event) => {
+            console.log('WebApp closing:', event);
+        });
+
+        // === ПРОВЕРКА ДОСТУПНЫХ МЕТОДОВ ===
+        console.log("Available Telegram methods:");
+        Object.keys(tg).forEach(key => {
+            if (typeof tg[key] === 'function') {
+                console.log(`- ${key}()`);
+            }
+        });
+
+        // === ПРОВЕРКА ОСОБЕННО ВАЖНЫХ МЕТОДОВ ===
         console.log("sendData available:", typeof tg.sendData === 'function');
-        console.log("sendData function:", tg.sendData);
-        
-        // Проверяем другие важные методы
         console.log("close available:", typeof tg.close === 'function');
-        console.log("expand available:", typeof tg.expand === 'function');
+        console.log("isExpanded:", tg.isExpanded);
+        console.log("platform:", tg.platform);
 
         tg.expand();
         tg.BackButton.hide();
@@ -445,26 +462,33 @@
                                     dice_type: diceType
                                 };
                                 console.log("Sending data to bot:", resultData);
-                                // Проверяем доступность Telegram WebApp
+                                /// ПРАВИЛЬНАЯ ОТПРАВКА ДАННЫХ
                                 try {
-                                    // ПРАВИЛЬНЫЙ ФОРМАТ - просто строка, не объект
-                                    const dataString = JSON.stringify(resultData);
-                                    console.log("Stringified data:", dataString);
-                                    
+                                    // Вариант 1: Основной метод
                                     if (typeof tg.sendData === 'function') {
-                                        tg.sendData(dataString);
-                                        console.log("Data sent successfully!");
-                                        
-                                        // Даем время на отправку перед закрытием
-                                        setTimeout(() => {
-                                            tg.close();
-                                        }, 500);
-                                        
-                                    } else {
-                                        console.error("ERROR: tg.sendData is not available");
+                                        tg.sendData(JSON.stringify(resultData));
+                                        console.log("Data sent via sendData");
+                                    } 
+                                    // Вариант 2: Альтернативный метод
+                                    else if (typeof tg.sendDataToBot === 'function') {
+                                        tg.sendDataToBot(JSON.stringify(resultData));
+                                        console.log("Data sent via sendDataToBot");
                                     }
+                                    // Вариант 3: Резервный метод
+                                    else {
+                                        console.error("No sendData function available");
+                                        // Попробуем закрыть и надеяться, что данные передадутся
+                                        tg.close();
+                                    }
+                                    
+                                    // Даем время на отправку данных перед закрытием
+                                    setTimeout(() => {
+                                        tg.close();
+                                    }, 300);
+                                    
                                 } catch (error) {
                                     console.error("Error sending data:", error);
+                                    tg.close();
                                 }
                             }, 1500);
                         }, 100);
