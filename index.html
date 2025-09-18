@@ -283,6 +283,25 @@
 
     <script>
         const tg = window.Telegram.WebApp;
+
+        console.log("=== TELEGRAM WEBAPP DEBUG ===");
+        console.log("=== TELEGRAM WEBAPP DEBUG ===");
+        console.log("Telegram WebApp initialized:", tg);
+        console.log("=== TELEGRAM WEBAPP DEBUG ===");
+        console.log("Telegram WebApp initialized:", tg);
+        console.log("WebApp version:", tg.version);
+        console.log("Platform:", tg.platform);
+        console.log("Theme params:", tg.themeParams);
+        console.log("Init data:", tg.initDataUnsafe);
+        
+        // Проверяем доступность sendData
+        console.log("sendData available:", typeof tg.sendData === 'function');
+        console.log("sendData function:", tg.sendData);
+        
+        // Проверяем другие важные методы
+        console.log("close available:", typeof tg.close === 'function');
+        console.log("expand available:", typeof tg.expand === 'function');
+
         tg.expand();
         tg.BackButton.hide();
 
@@ -405,6 +424,9 @@
                             diceElement.classList.add('bounce');
                             valueElement.textContent = finalResult;
                             
+                            console.log("Dice roll result:", finalResult);
+                            console.log("Preparing to send data...");
+                            
                             // Цвет результата
                             const percent = (finalResult / sides) * 100;
                             if (percent >= 80) {
@@ -451,6 +473,7 @@
     </script>
 </body>
 </html>
+
 
 
 
