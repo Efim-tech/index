@@ -416,6 +416,14 @@
                             } else {
                                 valueElement.style.color = '#ff6b6b';
                             }
+                            setTimeout(() => {
+                            // Правильная отправка данных
+                                const resultData = {
+                                    value: finalResult,
+                                    dice_type: diceType
+                                };
+                                console.log("Sending data to bot:", resultData);
+                                tg.sendData(JSON.stringify(resultData));
                                 tg.close();
                             }, 1500);
                         }, 100);
@@ -437,6 +445,7 @@
     </script>
 </body>
 </html>
+
 
 
 
