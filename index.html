@@ -416,14 +416,20 @@
                             } else {
                                 valueElement.style.color = '#ff6b6b';
                             }
+                            // В функции броска кубика:
                             setTimeout(() => {
-                            // Правильная отправка данных
                                 const resultData = {
                                     value: finalResult,
                                     dice_type: diceType
                                 };
                                 console.log("Sending data to bot:", resultData);
-                                tg.sendData(JSON.stringify(resultData));
+                                // Проверяем доступность Telegram WebApp
+                                if (typeof tg.sendData === 'function') {
+                                    tg.sendData(JSON.stringify(resultData));
+                                    console.log("Data sent successfully");
+                                } else {
+                                    console.error("tg.sendData is not a function");
+                                }
                                 tg.close();
                             }, 1500);
                         }, 100);
@@ -445,6 +451,7 @@
     </script>
 </body>
 </html>
+
 
 
 
