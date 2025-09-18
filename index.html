@@ -416,12 +416,6 @@
                             } else {
                                 valueElement.style.color = '#ff6b6b';
                             }
-                            
-                            setTimeout(() => {
-                                tg.sendData(JSON.stringify({
-                                dice_type: diceType,
-                                value: finalResult
-                                }));
                                 tg.close();
                             }, 1500);
                         }, 100);
@@ -443,6 +437,7 @@
     </script>
 </body>
 </html>
+
 
 
 
