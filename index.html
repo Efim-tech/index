@@ -419,10 +419,8 @@
                             
                             setTimeout(() => {
                                 tg.sendData(JSON.stringify({
-                                    action: "dice_roll",
-                                    dice_type: diceType,
-                                    value: finalResult,
-                                    original_prompt: `Бросок кубика ${diceType.toUpperCase()}`
+                                dice_type: diceType,
+                                value: finalResult
                                 }));
                                 tg.close();
                             }, 1500);
@@ -445,6 +443,7 @@
     </script>
 </body>
 </html>
+
 
 
 
