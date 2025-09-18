@@ -284,48 +284,29 @@
     <script>
         const tg = window.Telegram.WebApp;
 
-                // === ОБРАБОТЧИКИ СОБЫТИЙ ===
-        tg.onEvent('viewportChanged', (event) => {
-            console.log('Viewport changed:', event);
-        });
+        // === ОТЛАДОЧНАЯ ИНФОРМАЦИЯ ===
+        console.log("=== TELEGRAM WEBAPP DEBUG ===");
+        console.log("WebApp version:", tg.version);
+        console.log("Platform:", tg.platform);
+        console.log("sendData available:", typeof tg.sendData === 'function');
+        console.log("Init data:", tg.initDataUnsafe);
 
-        tg.onEvent('themeChanged', () => {
-            console.log('Theme changed');
-        });
-
-        // Важное событие - когда WebApp готов к работе
+        // === ОБРАБОТЧИКИ СОБЫТИЙ ===
         tg.onEvent('webAppReady', () => {
             console.log('WebApp is ready!');
-            console.log('Platform:', tg.platform);
-            console.log('Version:', tg.version);
         });
 
-        // Событие закрытия WebApp
         tg.onEvent('webAppClose', (event) => {
             console.log('WebApp closing:', event);
         });
 
-        // === ПРОВЕРКА ДОСТУПНЫХ МЕТОДОВ ===
-        console.log("Available Telegram methods:");
-        Object.keys(tg).forEach(key => {
-            if (typeof tg[key] === 'function') {
-                console.log(`- ${key}()`);
-            }
-        });
-
-        // === ПРОВЕРКА ОСОБЕННО ВАЖНЫХ МЕТОДОВ ===
-        console.log("sendData available:", typeof tg.sendData === 'function');
-        console.log("close available:", typeof tg.close === 'function');
-        console.log("isExpanded:", tg.isExpanded);
-        console.log("platform:", tg.platform);
-
         tg.expand();
         tg.BackButton.hide();
 
-        // Получаем параметр из URL (какой кубик активировать)
+        // Получаем параметр из URL
         const urlParams = new URLSearchParams(window.location.search);
-        const allowedDice = urlParams.get('dice') || 'd20'; // По умолчанию d20
-        
+        const allowedDice = urlParams.get('dice') || 'd20';
+
         // Создаем магические частицы
         function createParticles() {
             const particlesContainer = document.getElementById('particles');
@@ -409,7 +390,27 @@
             return `rotateX(${randomX}deg) rotateY(${randomY}deg) rotateZ(${randomZ}deg)`;
         }
 
-        // Обработчик бросков
+        // Функция для отправки данных
+        function sendDataToBot(data) {
+            console.log("Attempting to send data:", data);
+            
+            try {
+                if (typeof tg.sendData === 'function') {
+                    const dataString = JSON.stringify(data);
+                    tg.sendData(dataString);
+                    console.log("✅ Data sent successfully");
+                    return true;
+                } else {
+                    console.error("❌ tg.sendData is not a function");
+                    return false;
+                }
+            } catch (error) {
+                console.error("❌ Error sending data:", error);
+                return false;
+            }
+        }
+
+        // Обработчик бросков - ИСПРАВЛЕННАЯ ВЕРСИЯ
         document.querySelectorAll('.roll-button').forEach(button => {
             button.addEventListener('click', () => {
                 if (button.disabled) return;
@@ -434,64 +435,50 @@
                     if (rolls >= maxRolls) {
                         clearInterval(rollInterval);
                         
-                        setTimeout(() => {
-                            const finalResult = rollDice(sides);
-                            
-                            diceElement.classList.remove('rolling');
-                            diceElement.classList.add('bounce');
-                            valueElement.textContent = finalResult;
-                            
-                            console.log("Dice roll result:", finalResult);
-                            console.log("Preparing to send data...");
-                            
-                            // Цвет результата
-                            const percent = (finalResult / sides) * 100;
-                            if (percent >= 80) {
-                                valueElement.style.color = '#4ecdc4';
-                            } else if (percent >= 50) {
-                                valueElement.style.color = '#ffd700';
-                            } else if (percent >= 20) {
-                                valueElement.style.color = '#ffa86b';
-                            } else {
-                                valueElement.style.color = '#ff6b6b';
-                            }
-                            // В функции броска кубика:
+                        // Убираем вложенный setTimeout - это важно!
+                        const finalResult = rollDice(sides);
+                        
+                        diceElement.classList.remove('rolling');
+                        diceElement.classList.add('bounce');
+                        valueElement.textContent = finalResult;
+                        
+                        console.log("Dice roll result:", finalResult);
+                        
+                        // Цвет результата
+                        const percent = (finalResult / sides) * 100;
+                        if (percent >= 80) {
+                            valueElement.style.color = '#4ecdc4';
+                        } else if (percent >= 50) {
+                            valueElement.style.color = '#ffd700';
+                        } else if (percent >= 20) {
+                            valueElement.style.color = '#ffa86b';
+                        } else {
+                            valueElement.style.color = '#ff6b6b';
+                        }
+                        
+                        // Отправка данных - без вложенного setTimeout
+                        const resultData = {
+                            value: finalResult,
+                            dice_type: diceType,
+                            timestamp: new Date().toISOString()
+                        };
+                        
+                        console.log("Sending data to bot:", resultData);
+                        
+                        // Отправляем данные
+                        if (sendDataToBot(resultData)) {
+                            // Закрываем WebApp через 500ms после успешной отправки
                             setTimeout(() => {
-                                const resultData = {
-                                    value: finalResult,
-                                    dice_type: diceType
-                                };
-                                console.log("Sending data to bot:", resultData);
-                                /// ПРАВИЛЬНАЯ ОТПРАВКА ДАННЫХ
-                                try {
-                                    // Вариант 1: Основной метод
-                                    if (typeof tg.sendData === 'function') {
-                                        tg.sendData(JSON.stringify(resultData));
-                                        console.log("Data sent via sendData");
-                                    } 
-                                    // Вариант 2: Альтернативный метод
-                                    else if (typeof tg.sendDataToBot === 'function') {
-                                        tg.sendDataToBot(JSON.stringify(resultData));
-                                        console.log("Data sent via sendDataToBot");
-                                    }
-                                    // Вариант 3: Резервный метод
-                                    else {
-                                        console.error("No sendData function available");
-                                        // Попробуем закрыть и надеяться, что данные передадутся
-                                        tg.close();
-                                    }
-                                    
-                                    // Даем время на отправку данных перед закрытием
-                                    setTimeout(() => {
-                                        tg.close();
-                                    }, 300);
-                                    
-                                } catch (error) {
-                                    console.error("Error sending data:", error);
-                                    tg.close();
-                                }
-                            }, 1500);
-                        }, 100);
+                                console.log("Closing WebApp...");
+                                tg.close();
+                            }, 500);
+                        } else {
+                            // Если не удалось отправить, все равно закрываем
+                            console.log("Closing WebApp despite send error...");
+                            setTimeout(() => {
+                                tg.close();
+                            }, 1000);
+                        }
                     }
                 }, 300);
             });
