@@ -124,6 +124,24 @@
             margin: 10px 0;
             font-size: 0.9rem;
         }
+        .auto-roll-status {
+            font-size: 1.2rem;
+            margin: 1.5rem 0;
+            color: #ffd700;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Скрываем кнопки броска, так как бросок автоматический */
+        .roll-button {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -161,6 +179,7 @@
             <div class="result">
                 <span class="dice-value" id="d4-value">⚡</span>
             </div>
+            <div class="auto-roll-status" id="auto-roll-status"></div>
             <button class="roll-button" data-dice="d4" disabled>🎲 Бросить D4</button>
         </div>
 
@@ -179,6 +198,7 @@
             <div class="result">
                 <span class="dice-value" id="d6-value">⚡</span>
             </div>
+            <div class="auto-roll-status" id="auto-roll-status"></div>
             <button class="roll-button" data-dice="d6" disabled>🎲 Бросить D6</button>
         </div>
 
@@ -199,6 +219,7 @@
             <div class="result">
                 <span class="dice-value" id="d8-value">⚡</span>
             </div>
+            <div class="auto-roll-status" id="auto-roll-status"></div>
             <button class="roll-button" data-dice="d8" disabled>🎲 Бросить D8</button>
         </div>
 
@@ -221,6 +242,7 @@
             <div class="result">
                 <span class="dice-value" id="d10-value">⚡</span>
             </div>
+            <div class="auto-roll-status" id="auto-roll-status"></div>
             <button class="roll-button" data-dice="d10" disabled>🎲 Бросить D10</button>
         </div>
 
@@ -245,6 +267,7 @@
             <div class="result">
                 <span class="dice-value" id="d12-value">⚡</span>
             </div>
+            <div class="auto-roll-status" id="auto-roll-status"></div>
             <button class="roll-button" data-dice="d12" disabled>🎲 Бросить D12</button>
         </div>
 
@@ -277,7 +300,9 @@
             <div class="result">
                 <span class="dice-value" id="d20-value">⚡</span>
             </div>
-            <button class="roll-button" data-dice="d20" disabled>🎲 Бросить D20</button>
+            <button class="roll-button" data-dice="d20" disabled style="display: none;">
+                🎲 Бросить D20
+            </button>
         </div>
     </div>
 
@@ -374,19 +399,21 @@
         }
 
         // Обработчик бросков
-        document.querySelectorAll('.roll-button').forEach(button => {
-            button.addEventListener('click', () => {
-                if (button.disabled) return;
-                
-                const diceType = button.getAttribute('data-dice');
-                const diceElement = document.getElementById(`${diceType}-dice`);
-                const valueElement = document.getElementById(`${diceType}-value`);
-                const sides = parseInt(diceType.substring(1));
-                
-                button.disabled = true;
-                valueElement.textContent = '🎲';
-                
-                // Анимация броска
+        let autoRollExecuted = false;
+
+        function autoRollDice() {
+            if (autoRollExecuted) return;
+            autoRollExecuted = true;
+            
+            const diceType = allowedDice;
+            const diceElement = document.getElementById(`${diceType}-dice`);
+            const valueElement = document.getElementById(`${diceType}-value`);
+            const sides = parseInt(diceType.substring(1));
+            
+            if (valueElement) valueElement.textContent = '🎲';
+            
+            // Анимация броска
+            if (diceElement) {
                 diceElement.classList.add('rolling');
                 
                 let rolls = 0;
@@ -401,35 +428,53 @@
                         setTimeout(() => {
                             const finalResult = rollDice(sides);
                             
-                            diceElement.classList.remove('rolling');
-                            diceElement.classList.add('bounce');
-                            valueElement.textContent = finalResult;
-                            
-                            // Цвет результата
-                            const percent = (finalResult / sides) * 100;
-                            if (percent >= 80) {
-                                valueElement.style.color = '#4ecdc4';
-                            } else if (percent >= 50) {
-                                valueElement.style.color = '#ffd700';
-                            } else if (percent >= 20) {
-                                valueElement.style.color = '#ffa86b';
-                            } else {
-                                valueElement.style.color = '#ff6b6b';
+                            if (diceElement) {
+                                diceElement.classList.remove('rolling');
+                                diceElement.classList.add('bounce');
                             }
                             
+                            if (valueElement) {
+                                valueElement.textContent = finalResult;
+                                
+                                // Цвет результата
+                                const percent = (finalResult / sides) * 100;
+                                if (percent >= 80) {
+                                    valueElement.style.color = '#4ecdc4';
+                                } else if (percent >= 50) {
+                                    valueElement.style.color = '#ffd700';
+                                } else if (percent >= 20) {
+                                    valueElement.style.color = '#ffa86b';
+                                } else {
+                                    valueElement.style.color = '#ff6b6b';
+                                }
+                            }
+                            
+                            // Автоматическая отправка данных и закрытие
                             setTimeout(() => {
-                                tg.sendData(JSON.stringify({
+                                const resultData = {
                                     action: "dice_roll",
                                     dice_type: diceType,
-                                    value: finalResult,
-                                    original_prompt: `Бросок кубика ${diceType.toUpperCase()}`
-                                }));
+                                    value: finalResult
+                                };
+                                
+                                console.log("Auto-sending data:", resultData);
+                                tg.sendData(JSON.stringify(resultData));
                                 tg.close();
                             }, 1500);
                         }, 100);
                     }
                 }, 300);
-            });
+            }
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            // Показываем статус авто-броска
+            const statusElement = document.getElementById('auto-roll-status');
+            if (statusElement) {
+                statusElement.textContent = "🎯 Бросаем кубик...";
+            }
+            
+            // Запускаем автоматический бросок через 1 секунду
+            setTimeout(autoRollDice, 1000);
         });
 
         // Инициализация
