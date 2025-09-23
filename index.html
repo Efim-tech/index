@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Master - 3D Кубики</title>
+    <title>Game Master - 3D Кубики с цифрами</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -126,11 +126,6 @@
             50% { opacity: 0.7; }
         }
 
-        .roll-button {
-            display: none !important;
-        }
-
-        /* Частицы фона */
         .particle {
             position: absolute;
             background: rgba(255, 255, 255, 0.3);
@@ -150,7 +145,7 @@
     <div class="container">
         <div class="header">
             <h1>🎲 Dice Master</h1>
-            <p>Реалистичные 3D кубики</p>
+            <p>Реалистичные 3D кубики с цифрами</p>
         </div>
 
         <div class="tabs">
@@ -233,33 +228,64 @@
         tg.expand();
         tg.BackButton.hide();
 
-        // Получаем параметр из URL
         const urlParams = new URLSearchParams(window.location.search);
         const allowedDice = urlParams.get('dice') || 'd20';
 
-        // Класс для управления 3D кубиками
-        class Dice3D {
+        // Класс для создания текстур с цифрами
+        class DiceTextureGenerator {
+            static createNumberTexture(number, backgroundColor = 0x1a1a2e, textColor = 'white') {
+                const canvas = document.createElement('canvas');
+                canvas.width = 256;
+                canvas.height = 256;
+                const context = canvas.getContext('2d');
+
+                // Фон
+                context.fillStyle = `#${backgroundColor.toString(16).padStart(6, '0')}`;
+                context.fillRect(0, 0, 256, 256);
+
+                // Текст
+                context.fillStyle = textColor;
+                context.font = 'bold 120px Arial';
+                context.textAlign = 'center';
+                context.textBaseline = 'middle';
+                context.fillText(number.toString(), 128, 128);
+
+                // Создаем текстуру
+                const texture = new THREE.CanvasTexture(canvas);
+                texture.needsUpdate = true;
+                return texture;
+            }
+        }
+
+        // Класс для управления 3D кубиками с цифрами
+        class Dice3DWithNumbers {
             constructor(canvasId, type) {
                 this.canvas = document.getElementById(canvasId);
                 this.type = type;
+                this.sides = this.getSidesCount();
                 this.scene = null;
                 this.camera = null;
                 this.renderer = null;
-                this.dice = null;
+                this.diceGroup = null;
                 this.isRolling = false;
+                this.currentTopNumber = 1;
                 
                 this.init();
             }
 
+            getSidesCount() {
+                const sidesMap = {
+                    'd4': 4, 'd6': 6, 'd8': 8, 
+                    'd10': 10, 'd12': 12, 'd20': 20
+                };
+                return sidesMap[this.type] || 6;
+            }
+
             init() {
-                // Создаем сцену
                 this.scene = new THREE.Scene();
-                
-                // Создаем камеру
                 this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
                 this.camera.position.z = 8;
                 
-                // Создаем рендерер
                 this.renderer = new THREE.WebGLRenderer({ 
                     canvas: this.canvas,
                     antialias: true,
@@ -276,14 +302,14 @@
                 directionalLight.position.set(5, 10, 7);
                 this.scene.add(directionalLight);
                 
-                // Создаем кубик
-                this.createDice();
-                
-                // Анимация
+                this.createDiceWithNumbers();
                 this.animate();
             }
 
-            createDice() {
+            createDiceWithNumbers() {
+                this.diceGroup = new THREE.Group();
+                
+                // Создаем базовую геометрию
                 const geometry = this.getGeometry();
                 const material = new THREE.MeshPhongMaterial({ 
                     color: 0xff6b6b,
@@ -291,11 +317,13 @@
                     specular: 0x444444
                 });
                 
-                this.dice = new THREE.Mesh(geometry, material);
-                this.scene.add(this.dice);
+                const diceMesh = new THREE.Mesh(geometry, material);
+                this.diceGroup.add(diceMesh);
                 
                 // Добавляем цифры на грани
-                this.addNumbers();
+                this.addNumbersToFaces();
+                
+                this.scene.add(this.diceGroup);
             }
 
             getGeometry() {
@@ -310,9 +338,118 @@
                 }
             }
 
-            addNumbers() {
-                // Для простоты показываем только базовую геометрию
-                // В реальном проекте можно добавить текстуры с цифрами
+            addNumbersToFaces() {
+                const numbers = Array.from({length: this.sides}, (_, i) => i + 1);
+                
+                numbers.forEach((number, index) => {
+                    const numberMaterial = new THREE.MeshBasicMaterial({
+                        map: DiceTextureGenerator.createNumberTexture(number, 0xff6b6b, 'white'),
+                        transparent: true,
+                        opacity: 0.9
+                    });
+                    
+                    let numberGeometry, position, rotation;
+                    
+                    switch(this.type) {
+                        case 'd6':
+                            // Для куба размещаем цифры на каждой грани
+                            numberGeometry = new THREE.PlaneGeometry(1.5, 1.5);
+                            position = this.getD6NumberPosition(index);
+                            rotation = this.getD6NumberRotation(index);
+                            break;
+                            
+                        case 'd20':
+                            // Для d20 используем меньшие плоскости
+                            numberGeometry = new THREE.PlaneGeometry(0.8, 0.8);
+                            position = this.getD20NumberPosition(index);
+                            rotation = this.getD20NumberRotation(index);
+                            break;
+                            
+                        default:
+                            // Для остальных кубиков
+                            numberGeometry = new THREE.PlaneGeometry(1, 1);
+                            position = this.getGenericNumberPosition(index);
+                            rotation = this.getGenericNumberRotation(index);
+                    }
+                    
+                    const numberMesh = new THREE.Mesh(numberGeometry, numberMaterial);
+                    numberMesh.position.copy(position);
+                    numberMesh.rotation.set(rotation.x, rotation.y, rotation.z);
+                    numberMesh.lookAt(0, 0, 0); // Ориентируем к центру
+                    
+                    this.diceGroup.add(numberMesh);
+                });
+            }
+
+            // Позиции для D6
+            getD6NumberPosition(faceIndex) {
+                const positions = [
+                    new THREE.Vector3(0, 0, 1.51),   // Перед
+                    new THREE.Vector3(0, 0, -1.51),  // Зад
+                    new THREE.Vector3(0, 1.51, 0),   // Верх
+                    new THREE.Vector3(0, -1.51, 0),  // Низ
+                    new THREE.Vector3(1.51, 0, 0),   // Право
+                    new THREE.Vector3(-1.51, 0, 0)   // Лево
+                ];
+                return positions[faceIndex] || new THREE.Vector3(0, 0, 1.5);
+            }
+
+            getD6NumberRotation(faceIndex) {
+                const rotations = [
+                    {x: 0, y: 0, z: 0},           // Перед
+                    {x: 0, y: Math.PI, z: 0},     // Зад
+                    {x: -Math.PI/2, y: 0, z: 0},  // Верх
+                    {x: Math.PI/2, y: 0, z: 0},   // Низ
+                    {x: 0, y: Math.PI/2, z: 0},   // Право
+                    {x: 0, y: -Math.PI/2, z: 0}   // Лево
+                ];
+                return rotations[faceIndex] || {x: 0, y: 0, z: 0};
+            }
+
+            // Позиции для D20 (упрощенные)
+            getD20NumberPosition(faceIndex) {
+                const phi = Math.acos(1 - 2 * (faceIndex + 0.5) / this.sides);
+                const theta = Math.PI * (1 + Math.sqrt(5)) * faceIndex;
+                
+                const x = 2.2 * Math.cos(theta) * Math.sin(phi);
+                const y = 2.2 * Math.sin(theta) * Math.sin(phi);
+                const z = 2.2 * Math.cos(phi);
+                
+                return new THREE.Vector3(x, y, z);
+            }
+
+            getD20NumberRotation(faceIndex) {
+                return {x: 0, y: 0, z: 0};
+            }
+
+            // Общие позиции для других кубиков
+            getGenericNumberPosition(faceIndex) {
+                const phi = Math.acos(1 - 2 * (faceIndex + 0.5) / this.sides);
+                const theta = Math.PI * (1 + Math.sqrt(5)) * faceIndex;
+                
+                const x = 2.5 * Math.cos(theta) * Math.sin(phi);
+                const y = 2.5 * Math.sin(theta) * Math.sin(phi);
+                const z = 2.5 * Math.cos(phi);
+                
+                return new THREE.Vector3(x, y, z);
+            }
+
+            getGenericNumberRotation(faceIndex) {
+                return {x: 0, y: 0, z: 0};
+            }
+
+            // Определяем верхнюю цифру после броска
+            getTopNumber() {
+                // Упрощенный метод: определяем верхнюю грань по Y-координате
+                const worldPosition = new THREE.Vector3();
+                const worldQuaternion = new THREE.Quaternion();
+                
+                this.diceGroup.getWorldPosition(worldPosition);
+                this.diceGroup.getWorldQuaternion(worldQuaternion);
+                
+                // Для реалистичности можно добавить более сложную логику определения верхней грани
+                // Сейчас возвращаем случайное число (в реальном проекте нужно определить настоящую верхнюю грань)
+                return Math.floor(Math.random() * this.sides) + 1;
             }
 
             roll() {
@@ -320,37 +457,35 @@
                 
                 this.isRolling = true;
                 
-                // Случайное вращение
                 const targetRotation = {
-                    x: Math.random() * Math.PI * 4,
-                    y: Math.random() * Math.PI * 4,
-                    z: Math.random() * Math.PI * 4
+                    x: Math.random() * Math.PI * 6,
+                    y: Math.random() * Math.PI * 6,
+                    z: Math.random() * Math.PI * 6
                 };
                 
-                // Анимация броска
-                const startRotation = this.dice.rotation.clone();
+                const startRotation = this.diceGroup.rotation.clone();
                 const duration = 2000;
                 const startTime = Date.now();
                 
                 const animateRoll = () => {
                     const elapsed = Date.now() - startTime;
                     const progress = Math.min(elapsed / duration, 1);
-                    
-                    // Эффект easing
                     const easedProgress = this.easeOutCubic(progress);
                     
-                    this.dice.rotation.x = startRotation.x + (targetRotation.x - startRotation.x) * easedProgress;
-                    this.dice.rotation.y = startRotation.y + (targetRotation.y - startRotation.y) * easedProgress;
-                    this.dice.rotation.z = startRotation.z + (targetRotation.z - startRotation.z) * easedProgress;
+                    this.diceGroup.rotation.x = startRotation.x + (targetRotation.x - startRotation.x) * easedProgress;
+                    this.diceGroup.rotation.y = startRotation.y + (targetRotation.y - startRotation.y) * easedProgress;
+                    this.diceGroup.rotation.z = startRotation.z + (targetRotation.z - startRotation.z) * easedProgress;
                     
                     if (progress < 1) {
                         requestAnimationFrame(animateRoll);
                     } else {
                         this.isRolling = false;
+                        this.currentTopNumber = this.getTopNumber();
                     }
                 };
                 
                 animateRoll();
+                return this.currentTopNumber;
             }
 
             easeOutCubic(t) {
@@ -361,16 +496,14 @@
                 requestAnimationFrame(() => this.animate());
                 
                 if (!this.isRolling) {
-                    // Медленное вращение в покое
-                    this.dice.rotation.y += 0.005;
-                    this.dice.rotation.x += 0.002;
+                    this.diceGroup.rotation.y += 0.005;
+                    this.diceGroup.rotation.x += 0.002;
                 }
                 
                 this.renderer.render(this.scene, this.camera);
             }
         }
 
-        // Создаем частицы фона
         function createParticles() {
             const particlesContainer = document.getElementById('particles');
             for (let i = 0; i < 15; i++) {
@@ -387,9 +520,7 @@
             }
         }
 
-        // Активируем только разрешенный кубик
         function activateAllowedDice(diceType) {
-            // Деактивируем все
             document.querySelectorAll('.tab-button').forEach(btn => {
                 btn.classList.add('locked');
                 btn.classList.remove('active');
@@ -398,7 +529,6 @@
                 content.classList.remove('active');
             });
             
-            // Активируем разрешенный
             const allowedButton = document.querySelector(`[data-tab="${diceType}"]`);
             const allowedContent = document.getElementById(`${diceType}-content`);
             
@@ -410,7 +540,6 @@
             }
         }
 
-        // Управление вкладками
         document.querySelectorAll('.tab-button').forEach(button => {
             button.addEventListener('click', () => {
                 if (button.classList.contains('locked')) {
@@ -430,22 +559,15 @@
             });
         });
 
-        // Функция броска кубика
-        function rollDice(sides) {
-            return Math.floor(Math.random() * sides) + 1;
-        }
-
-        // Автоматический бросок
         let autoRollExecuted = false;
         let diceInstances = {};
 
         function initializeDice() {
-            // Создаем экземпляры 3D кубиков для каждого типа
             const diceTypes = ['d4', 'd6', 'd8', 'd10', 'd12', 'd20'];
             diceTypes.forEach(type => {
                 const canvasId = `${type}-canvas`;
                 if (document.getElementById(canvasId)) {
-                    diceInstances[type] = new Dice3D(canvasId, type);
+                    diceInstances[type] = new Dice3DWithNumbers(canvasId, type);
                 }
             });
         }
@@ -456,20 +578,17 @@
             
             const diceType = allowedDice;
             const valueElement = document.getElementById(`${diceType}-value`);
-            const sides = parseInt(diceType.substring(1));
             
             if (valueElement) valueElement.textContent = '🎲';
             
-            // Запускаем анимацию броска
             if (diceInstances[diceType]) {
-                diceInstances[diceType].roll();
-                
-                // Имитация нескольких вращений
                 let rolls = 0;
                 const maxRolls = 5;
+                let finalResult = 1;
+                
                 const rollInterval = setInterval(() => {
                     if (diceInstances[diceType]) {
-                        diceInstances[diceType].roll();
+                        finalResult = diceInstances[diceType].roll();
                     }
                     rolls++;
                     
@@ -477,13 +596,12 @@
                         clearInterval(rollInterval);
                         
                         setTimeout(() => {
-                            const finalResult = rollDice(sides);
-                            
                             if (valueElement) {
                                 valueElement.textContent = finalResult;
                                 
-                                // Цвет результата в зависимости от значения
+                                const sides = parseInt(diceType.substring(1));
                                 const percent = (finalResult / sides) * 100;
+                                
                                 if (percent >= 80) {
                                     valueElement.style.color = '#4ecdc4';
                                     valueElement.style.textShadow = '0 0 20px #4ecdc4';
@@ -499,7 +617,6 @@
                                 }
                             }
                             
-                            // Автоматическая отправка и закрытие
                             setTimeout(() => {
                                 const resultData = {
                                     action: "dice_roll",
@@ -517,13 +634,11 @@
             }
         }
 
-        // Инициализация при загрузке
         document.addEventListener('DOMContentLoaded', function() {
             createParticles();
             initializeDice();
             activateAllowedDice(allowedDice);
             
-            // Запускаем автоматический бросок через 2 секунды
             setTimeout(autoRollDice, 2000);
         });
     </script>
