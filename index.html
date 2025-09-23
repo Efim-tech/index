@@ -241,7 +241,7 @@
             // Прозрачный фон
             ctx.clearRect(0, 0, size, size);
 
-            // Белый круг как фон цифры (увеличили размер)
+            // Белый круг как фон цифры
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
             ctx.beginPath();
             ctx.arc(size/2, size/2, size/2.5, 0, Math.PI * 2);
@@ -254,7 +254,7 @@
             ctx.arc(size/2, size/2, size/2.5, 0, Math.PI * 2);
             ctx.stroke();
 
-            // Цифра (увеличили шрифт)
+            // Цифра
             ctx.fillStyle = '#ff6b6b';
             ctx.font = `bold ${size * 0.7}px Arial`;
             ctx.textAlign = 'center';
@@ -338,15 +338,14 @@
             }
 
             getGeometry() {
-                // Увеличили размер кубиков для больших цифр
                 switch(this.type) {
-                    case 'd4': return new THREE.TetrahedronGeometry(3.0);
-                    case 'd6': return new THREE.BoxGeometry(4.0, 4.0, 4.0);
-                    case 'd8': return new THREE.OctahedronGeometry(3.0);
-                    case 'd10': return new THREE.DodecahedronGeometry(2.8);
-                    case 'd12': return new THREE.DodecahedronGeometry(2.8);
-                    case 'd20': return new THREE.IcosahedronGeometry(3.0);
-                    default: return new THREE.BoxGeometry(4.0, 4.0, 4.0);
+                    case 'd4': return new THREE.TetrahedronGeometry(2.5);
+                    case 'd6': return new THREE.BoxGeometry(3, 3, 3);
+                    case 'd8': return new THREE.OctahedronGeometry(2.5);
+                    case 'd10': return new THREE.DodecahedronGeometry(2.3);
+                    case 'd12': return new THREE.DodecahedronGeometry(2.3);
+                    case 'd20': return new THREE.IcosahedronGeometry(2.5);
+                    default: return new THREE.BoxGeometry(3, 3, 3);
                 }
             }
 
@@ -369,141 +368,130 @@
                     case 'd12':
                         this.addD12Numbers();
                         break;
-                    default:
-                        this.addGenericNumbers();
                 }
             }
 
             addD6Numbers() {
-                // Правильные позиции для 6 граней куба (ближе к поверхности)
+                // Правильные позиции для 6 граней куба
                 const faceConfigs = [
-                    // front, back, top, bottom, right, left
-                    { pos: [0, 0, 2.01], normal: [0, 0, 1], num: 1 },    // перед
-                    { pos: [0, 0, -2.01], normal: [0, 0, -1], num: 2 },  // зад
-                    { pos: [0, 2.01, 0], normal: [0, 1, 0], num: 3 },    // верх
-                    { pos: [0, -2.01, 0], normal: [0, -1, 0], num: 4 },  // низ
-                    { pos: [2.01, 0, 0], normal: [1, 0, 0], num: 5 },    // право
-                    { pos: [-2.01, 0, 0], normal: [-1, 0, 0], num: 6 }   // лево
+                    { pos: [0, 0, 1.51], normal: [0, 0, 1], num: 1 },    // перед
+                    { pos: [0, 0, -1.51], normal: [0, 0, -1], num: 2 },  // зад
+                    { pos: [0, 1.51, 0], normal: [0, 1, 0], num: 3 },    // верх
+                    { pos: [0, -1.51, 0], normal: [0, -1, 0], num: 4 },  // низ
+                    { pos: [1.51, 0, 0], normal: [1, 0, 0], num: 5 },    // право
+                    { pos: [-1.51, 0, 0], normal: [-1, 0, 0], num: 6 }   // лево
                 ];
 
                 faceConfigs.forEach(config => {
-                    this.createNumberPlane(config.num, config.pos, config.normal, 1.5); // Увеличили размер цифр
+                    this.createNumberPlane(config.num, config.pos, config.normal, 1.0);
                 });
             }
 
             addD4Numbers() {
-                // Правильные позиции для тетраэдра (центры граней)
+                // Для D4 (тетраэдра) - 4 грани, каждая - треугольник
+                // Вершины тетраэдра
+                const sqrt3 = Math.sqrt(3);
+                const sqrt6 = Math.sqrt(6);
+                
                 const faceConfigs = [
-                    { pos: [0, 2.2, 0.4], normal: [0, 0.8, 0.3], num: 1 },
-                    { pos: [1.5, -0.8, 0.4], normal: [0.8, -0.4, 0.3], num: 2 },
-                    { pos: [-1.5, -0.8, 0.4], normal: [-0.8, -0.4, 0.3], num: 3 },
-                    { pos: [0, -0.2, -1.8], normal: [0, -0.2, -0.9], num: 4 }
+                    // Каждая грань - треугольник, находим центр грани
+                    { pos: [0, 2.0/sqrt3, 0], normal: [0, 0.8, 0.2], num: 1 },        // верхняя грань
+                    { pos: [0, -1.0/sqrt3, 2.0/sqrt6], normal: [0, -0.5, 0.8], num: 2 }, // передняя грань
+                    { pos: [1.0, -1.0/sqrt3, -1.0/sqrt6], normal: [0.8, -0.5, -0.3], num: 3 }, // правая грань
+                    { pos: [-1.0, -1.0/sqrt3, -1.0/sqrt6], normal: [-0.8, -0.5, -0.3], num: 4 } // левая грань
                 ];
 
                 faceConfigs.forEach(config => {
-                    this.createNumberPlane(config.num, config.pos, config.normal, 1.2);
+                    this.createNumberPlane(config.num, config.pos, config.normal, 0.8);
                 });
             }
 
             addD8Numbers() {
-                // Правильные позиции для октаэдра (центры треугольных граней)
-                const vertices = [
-                    [0, 0, 2.5], [0, 0, -2.5],  // верх и низ
-                    [2.5, 0, 0], [-2.5, 0, 0],  // право и лево
-                    [0, 2.5, 0], [0, -2.5, 0]   // перед и зад
+                // Для D8 (октаэдра) - 8 граней, каждая - треугольник
+                const faceConfigs = [
+                    // Верхняя пирамида (4 грани)
+                    { pos: [0, 1.8, 0], normal: [0, 1, 0], num: 1 },
+                    { pos: [1.2, 0.6, 1.2], normal: [0.7, 0.3, 0.7], num: 2 },
+                    { pos: [1.2, 0.6, -1.2], normal: [0.7, 0.3, -0.7], num: 3 },
+                    { pos: [-1.2, 0.6, 1.2], normal: [-0.7, 0.3, 0.7], num: 4 },
+                    { pos: [-1.2, 0.6, -1.2], normal: [-0.7, 0.3, -0.7], num: 5 },
+                    
+                    // Нижняя пирамида (4 грани)
+                    { pos: [0, -1.8, 0], normal: [0, -1, 0], num: 6 },
+                    { pos: [1.2, -0.6, 1.2], normal: [0.7, -0.3, 0.7], num: 7 },
+                    { pos: [1.2, -0.6, -1.2], normal: [0.7, -0.3, -0.7], num: 8 }
                 ];
 
-                // Создаем 8 граней из вершин
-                const faces = [];
-                for (let i = 0; i < vertices.length; i++) {
-                    for (let j = i + 1; j < vertices.length; j++) {
-                        for (let k = j + 1; k < vertices.length; k++) {
-                            // Вычисляем центр грани
-                            const center = [
-                                (vertices[i][0] + vertices[j][0] + vertices[k][0]) / 3,
-                                (vertices[i][1] + vertices[j][1] + vertices[k][1]) / 3,
-                                (vertices[i][2] + vertices[j][2] + vertices[k][2]) / 3
-                            ];
-                            
-                            // Нормаль (направление от центра)
-                            const normal = center.map(v => v * 0.8);
-                            faces.push({ pos: center, normal: normal });
-                            
-                            if (faces.length >= 8) break;
-                        }
-                        if (faces.length >= 8) break;
-                    }
-                    if (faces.length >= 8) break;
-                }
-
-                faces.forEach((face, index) => {
-                    this.createNumberPlane(index + 1, face.pos, face.normal, 1.0);
+                faceConfigs.forEach(config => {
+                    this.createNumberPlane(config.num, config.pos, config.normal, 0.7);
                 });
             }
 
             addD20Numbers() {
-                // Правильные позиции для икосаэдра (центры граней)
+                // Для D20 (икосаэдра) - 20 граней, каждая - треугольник
+                // Используем вершины икосаэдра для расчета центров граней
                 const t = (1 + Math.sqrt(5)) / 2;
-                const vertices = [
-                    [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
-                    [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t],
-                    [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]
+                
+                const faceConfigs = [
+                    // Верхние грани вокруг вершины (0, 1, t)
+                    { pos: [0, 1.6, 1.0], normal: [0, 0.8, 0.5], num: 1 },
+                    { pos: [1.0, 1.6, 0], normal: [0.5, 0.8, 0], num: 2 },
+                    { pos: [0.6, 1.0, 1.0], normal: [0.3, 0.5, 0.5], num: 3 },
+                    { pos: [1.0, 0.6, 1.0], normal: [0.5, 0.3, 0.5], num: 4 },
+                    { pos: [1.0, 1.0, 0.6], normal: [0.5, 0.5, 0.3], num: 5 },
+                    
+                    // Средние грани
+                    { pos: [0, 1.0, 1.6], normal: [0, 0.5, 0.8], num: 6 },
+                    { pos: [1.6, 1.0, 0], normal: [0.8, 0.5, 0], num: 7 },
+                    { pos: [0, -1.0, 1.6], normal: [0, -0.5, 0.8], num: 8 },
+                    { pos: [1.6, -1.0, 0], normal: [0.8, -0.5, 0], num: 9 },
+                    { pos: [1.0, 0, 1.6], normal: [0.5, 0, 0.8], num: 10 },
+                    
+                    // Нижние грани
+                    { pos: [0, -1.6, 1.0], normal: [0, -0.8, 0.5], num: 11 },
+                    { pos: [1.0, -1.6, 0], normal: [0.5, -0.8, 0], num: 12 },
+                    { pos: [0.6, -1.0, 1.0], normal: [0.3, -0.5, 0.5], num: 13 },
+                    { pos: [1.0, -0.6, 1.0], normal: [0.5, -0.3, 0.5], num: 14 },
+                    { pos: [1.0, -1.0, 0.6], normal: [0.5, -0.5, 0.3], num: 15 },
+                    
+                    // Оставшиеся грани
+                    { pos: [-1.0, 1.6, 0], normal: [-0.5, 0.8, 0], num: 16 },
+                    { pos: [-1.0, -1.6, 0], normal: [-0.5, -0.8, 0], num: 17 },
+                    { pos: [0, 1.0, -1.6], normal: [0, 0.5, -0.8], num: 18 },
+                    { pos: [0, -1.0, -1.6], normal: [0, -0.5, -0.8], num: 19 },
+                    { pos: [1.0, 0, -1.6], normal: [0.5, 0, -0.8], num: 20 }
                 ];
 
-                // Нормализуем и масштабируем вершины
-                const scaledVertices = vertices.map(v => {
-                    const length = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
-                    return [v[0]/length * 2.5, v[1]/length * 2.5, v[2]/length * 2.5];
-                });
-
-                // Создаем 20 граней (каждая грань - треугольник)
-                const faces = [];
-                // Упрощенный подход - используем вершины как центры граней
-                for (let i = 0; i < 20; i++) {
-                    const phi = Math.acos(1 - 2 * (i + 0.5) / 20);
-                    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-                    
-                    const x = 2.6 * Math.cos(theta) * Math.sin(phi);
-                    const y = 2.6 * Math.sin(theta) * Math.sin(phi);
-                    const z = 2.6 * Math.cos(phi);
-                    
-                    const normal = [x, y, z];
-                    faces.push({ pos: [x * 0.9, y * 0.9, z * 0.9], normal: normal });
-                }
-
-                faces.forEach((face, index) => {
-                    this.createNumberPlane(index + 1, face.pos, face.normal, 0.8);
+                faceConfigs.forEach(config => {
+                    this.createNumberPlane(config.num, config.pos, config.normal, 0.5);
                 });
             }
 
             addD12Numbers() {
-                // Для d12 используем центры граней додекаэдра
-                for (let i = 1; i <= 12; i++) {
-                    const phi = Math.acos(1 - 2 * (i + 0.5) / 12);
-                    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+                // Для D12 (додекаэдра) - 12 граней, каждая - пятиугольник
+                const faceConfigs = [
+                    // Верхние и нижние грани
+                    { pos: [0, 1.8, 0.6], normal: [0, 0.9, 0.3], num: 1 },
+                    { pos: [0.5, 1.6, 0.8], normal: [0.3, 0.8, 0.5], num: 2 },
+                    { pos: [0.8, 1.6, 0], normal: [0.5, 0.8, 0], num: 3 },
+                    { pos: [0.5, 1.6, -0.8], normal: [0.3, 0.8, -0.5], num: 4 },
+                    { pos: [-0.5, 1.6, 0.8], normal: [-0.3, 0.8, 0.5], num: 5 },
                     
-                    const x = 2.9 * Math.cos(theta) * Math.sin(phi);
-                    const y = 2.9 * Math.sin(theta) * Math.sin(phi);
-                    const z = 2.9 * Math.cos(phi);
+                    // Средние грани
+                    { pos: [1.2, 0.8, 0.6], normal: [0.7, 0.4, 0.3], num: 6 },
+                    { pos: [1.2, 0.8, -0.6], normal: [0.7, 0.4, -0.3], num: 7 },
+                    { pos: [0, 0.8, 1.4], normal: [0, 0.4, 0.8], num: 8 },
+                    { pos: [0, 0.8, -1.4], normal: [0, 0.4, -0.8], num: 9 },
+                    { pos: [-1.2, 0.8, 0.6], normal: [-0.7, 0.4, 0.3], num: 10 },
+                    { pos: [-1.2, 0.8, -0.6], normal: [-0.7, 0.4, -0.3], num: 11 },
                     
-                    const normal = [x, y, z];
-                    this.createNumberPlane(i, [x * 0.85, y * 0.85, z * 0.85], normal, 1.0);
-                }
-            }
+                    // Нижние грани
+                    { pos: [0, -1.8, 0.6], normal: [0, -0.9, 0.3], num: 12 }
+                ];
 
-            addGenericNumbers() {
-                // Общий метод для других кубиков
-                for (let i = 1; i <= this.sides; i++) {
-                    const phi = Math.acos(1 - 2 * (i + 0.5) / this.sides);
-                    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
-                    
-                    const x = 2.8 * Math.cos(theta) * Math.sin(phi);
-                    const y = 2.8 * Math.sin(theta) * Math.sin(phi);
-                    const z = 2.8 * Math.cos(phi);
-                    
-                    const normal = [x, y, z];
-                    this.createNumberPlane(i, [x * 0.9, y * 0.9, z * 0.9], normal, 1.2);
-                }
+                faceConfigs.forEach(config => {
+                    this.createNumberPlane(config.num, config.pos, config.normal, 0.6);
+                });
             }
 
             createNumberPlane(number, position, normal, scale) {
