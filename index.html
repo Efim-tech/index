@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Master - 3D Кубики</title>
+    <title>Game Master - 3D Кубики с цифрами</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -145,7 +145,7 @@
     <div class="container">
         <div class="header">
             <h1>🎲 Dice Master</h1>
-            <p>Реалистичные 3D кубики</p>
+            <p>3D Кубики с цифрами на гранях</p>
         </div>
 
         <div class="tabs">
@@ -231,8 +231,43 @@
         const urlParams = new URLSearchParams(window.location.search);
         const allowedDice = urlParams.get('dice') || 'd20';
 
-        // Простой класс для 3D кубиков
-        class SimpleDice3D {
+        // Создаем текстуры с цифрами через Canvas
+        function createNumberTexture(number, size = 256) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Прозрачный фон
+            ctx.clearRect(0, 0, size, size);
+
+            // Белый круг как фон цифры (увеличили размер)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Темная граница
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.arc(size/2, size/2, size/2.5, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // Цифра (увеличили шрифт)
+            ctx.fillStyle = '#ff6b6b';
+            ctx.font = `bold ${size * 0.7}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(number.toString(), size/2, size/2);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.needsUpdate = true;
+            return texture;
+        }
+
+        // Основной класс для кубиков с цифрами, прикрепленными к граням
+        class DiceWithAttachedNumbers {
             constructor(canvasId, type) {
                 this.canvas = document.getElementById(canvasId);
                 this.type = type;
@@ -252,7 +287,6 @@
             init() {
                 // Сцена
                 this.scene = new THREE.Scene();
-                this.scene.background = new THREE.Color(0x1a1a2e);
                 
                 // Камера
                 this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
@@ -275,122 +309,236 @@
                 directionalLight.position.set(5, 10, 7);
                 this.scene.add(directionalLight);
                 
-                // Создаем кубик
-                this.createDice();
+                // Создаем группу для кубика и цифр
+                this.diceGroup = new THREE.Group();
+                this.scene.add(this.diceGroup);
+                
+                // Создаем кубик с прикрепленными цифрами
+                this.createDiceWithNumbers();
                 
                 // Анимация
                 this.animate();
             }
 
-            createDice() {
+            createDiceWithNumbers() {
+                // Основной кубик
                 const geometry = this.getGeometry();
-                
-                // Простой материал с цветом
                 const material = new THREE.MeshPhongMaterial({ 
                     color: 0xff6b6b,
-                    shininess: 60,
                     transparent: true,
-                    opacity: 0.9
+                    opacity: 0.9,
+                    shininess: 60
                 });
                 
-                this.dice = new THREE.Mesh(geometry, material);
-                this.scene.add(this.dice);
+                this.diceMesh = new THREE.Mesh(geometry, material);
+                this.diceGroup.add(this.diceMesh);
                 
-                // Добавляем простые цифры (точки для D6)
-                this.addSimpleMarkers();
+                // Добавляем цифры, прикрепленные к граням
+                this.addAttachedNumbers();
             }
 
             getGeometry() {
+                // Увеличили размер кубиков для больших цифр
                 switch(this.type) {
-                    case 'd4': return new THREE.TetrahedronGeometry(2.5);
-                    case 'd6': return new THREE.BoxGeometry(3, 3, 3);
-                    case 'd8': return new THREE.OctahedronGeometry(2.5);
-                    case 'd10': return new THREE.DodecahedronGeometry(2.3);
-                    case 'd12': return new THREE.DodecahedronGeometry(2.3);
-                    case 'd20': return new THREE.IcosahedronGeometry(2.5);
-                    default: return new THREE.BoxGeometry(3, 3, 3);
+                    case 'd4': return new THREE.TetrahedronGeometry(3.0);
+                    case 'd6': return new THREE.BoxGeometry(4.0, 4.0, 4.0);
+                    case 'd8': return new THREE.OctahedronGeometry(3.0);
+                    case 'd10': return new THREE.DodecahedronGeometry(2.8);
+                    case 'd12': return new THREE.DodecahedronGeometry(2.8);
+                    case 'd20': return new THREE.IcosahedronGeometry(3.0);
+                    default: return new THREE.BoxGeometry(4.0, 4.0, 4.0);
                 }
             }
 
-            addSimpleMarkers() {
-                // Для D6 добавляем точки как на настоящей игральной кости
-                if (this.type === 'd6') {
-                    this.addD6Dots();
-                } else {
-                    // Для других кубиков добавляем простые сферы как маркеры
-                    this.addGenericMarkers();
+            addAttachedNumbers() {
+                // Для каждого типа кубика свои позиции цифр
+                switch(this.type) {
+                    case 'd6':
+                        this.addD6Numbers();
+                        break;
+                    case 'd4':
+                        this.addD4Numbers();
+                        break;
+                    case 'd8':
+                        this.addD8Numbers();
+                        break;
+                    case 'd20':
+                        this.addD20Numbers();
+                        break;
+                    case 'd10':
+                    case 'd12':
+                        this.addD12Numbers();
+                        break;
+                    default:
+                        this.addGenericNumbers();
                 }
             }
 
-            addD6Dots() {
-                // Позиции точек для игрального кубика
-                const dotPositions = [
-                    // Грань 1 (центр)
-                    [[0, 0, 1.6]],
-                    // Грань 2 (углы)
-                    [[-0.5, -0.5, -1.6], [0.5, 0.5, -1.6]],
-                    // Грань 3 (диагональ)
-                    [[-0.5, -0.5, 1.6], [0, 0, 1.6], [0.5, 0.5, 1.6]],
-                    // Грань 4 (углы)
-                    [[-0.5, -0.5, -1.6], [-0.5, 0.5, -1.6], [0.5, -0.5, -1.6], [0.5, 0.5, -1.6]],
-                    // Грань 5 (крест)
-                    [[-0.5, -0.5, 1.6], [-0.5, 0.5, 1.6], [0, 0, 1.6], [0.5, -0.5, 1.6], [0.5, 0.5, 1.6]],
-                    // Грань 6 (две линии)
-                    [[-0.5, -0.5, -1.6], [-0.5, 0, -1.6], [-0.5, 0.5, -1.6], [0.5, -0.5, -1.6], [0.5, 0, -1.6], [0.5, 0.5, -1.6]]
+            addD6Numbers() {
+                // Правильные позиции для 6 граней куба (ближе к поверхности)
+                const faceConfigs = [
+                    // front, back, top, bottom, right, left
+                    { pos: [0, 0, 2.01], normal: [0, 0, 1], num: 1 },    // перед
+                    { pos: [0, 0, -2.01], normal: [0, 0, -1], num: 2 },  // зад
+                    { pos: [0, 2.01, 0], normal: [0, 1, 0], num: 3 },    // верх
+                    { pos: [0, -2.01, 0], normal: [0, -1, 0], num: 4 },  // низ
+                    { pos: [2.01, 0, 0], normal: [1, 0, 0], num: 5 },    // право
+                    { pos: [-2.01, 0, 0], normal: [-1, 0, 0], num: 6 }   // лево
                 ];
 
-                // Повороты для каждой грани
-                const rotations = [
-                    { x: 0, y: 0, z: 0 },           // перед
-                    { x: 0, y: Math.PI, z: 0 },     // зад
-                    { x: -Math.PI/2, y: 0, z: 0 },  // верх
-                    { x: Math.PI/2, y: 0, z: 0 },   // низ
-                    { x: 0, y: Math.PI/2, z: 0 },   // право
-                    { x: 0, y: -Math.PI/2, z: 0 }   // лево
-                ];
-
-                dotPositions.forEach((dots, faceIndex) => {
-                    dots.forEach(position => {
-                        const dotGeometry = new THREE.SphereGeometry(0.2, 8, 8);
-                        const dotMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                        const dot = new THREE.Mesh(dotGeometry, dotMaterial);
-                        
-                        dot.position.set(position[0], position[1], position[2]);
-                        dot.rotation.set(rotations[faceIndex].x, rotations[faceIndex].y, rotations[faceIndex].z);
-                        
-                        this.scene.add(dot);
-                    });
+                faceConfigs.forEach(config => {
+                    this.createNumberPlane(config.num, config.pos, config.normal, 1.5); // Увеличили размер цифр
                 });
             }
 
-            addGenericMarkers() {
-                // Простые маркеры для других кубиков
-                for (let i = 0; i < this.sides; i++) {
-                    const markerGeometry = new THREE.SphereGeometry(0.15, 6, 6);
-                    const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
-                    const marker = new THREE.Mesh(markerGeometry, markerMaterial);
+            addD4Numbers() {
+                // Правильные позиции для тетраэдра (центры граней)
+                const faceConfigs = [
+                    { pos: [0, 2.2, 0.4], normal: [0, 0.8, 0.3], num: 1 },
+                    { pos: [1.5, -0.8, 0.4], normal: [0.8, -0.4, 0.3], num: 2 },
+                    { pos: [-1.5, -0.8, 0.4], normal: [-0.8, -0.4, 0.3], num: 3 },
+                    { pos: [0, -0.2, -1.8], normal: [0, -0.2, -0.9], num: 4 }
+                ];
+
+                faceConfigs.forEach(config => {
+                    this.createNumberPlane(config.num, config.pos, config.normal, 1.2);
+                });
+            }
+
+            addD8Numbers() {
+                // Правильные позиции для октаэдра (центры треугольных граней)
+                const vertices = [
+                    [0, 0, 2.5], [0, 0, -2.5],  // верх и низ
+                    [2.5, 0, 0], [-2.5, 0, 0],  // право и лево
+                    [0, 2.5, 0], [0, -2.5, 0]   // перед и зад
+                ];
+
+                // Создаем 8 граней из вершин
+                const faces = [];
+                for (let i = 0; i < vertices.length; i++) {
+                    for (let j = i + 1; j < vertices.length; j++) {
+                        for (let k = j + 1; k < vertices.length; k++) {
+                            // Вычисляем центр грани
+                            const center = [
+                                (vertices[i][0] + vertices[j][0] + vertices[k][0]) / 3,
+                                (vertices[i][1] + vertices[j][1] + vertices[k][1]) / 3,
+                                (vertices[i][2] + vertices[j][2] + vertices[k][2]) / 3
+                            ];
+                            
+                            // Нормаль (направление от центра)
+                            const normal = center.map(v => v * 0.8);
+                            faces.push({ pos: center, normal: normal });
+                            
+                            if (faces.length >= 8) break;
+                        }
+                        if (faces.length >= 8) break;
+                    }
+                    if (faces.length >= 8) break;
+                }
+
+                faces.forEach((face, index) => {
+                    this.createNumberPlane(index + 1, face.pos, face.normal, 1.0);
+                });
+            }
+
+            addD20Numbers() {
+                // Правильные позиции для икосаэдра (центры граней)
+                const t = (1 + Math.sqrt(5)) / 2;
+                const vertices = [
+                    [-1, t, 0], [1, t, 0], [-1, -t, 0], [1, -t, 0],
+                    [0, -1, t], [0, 1, t], [0, -1, -t], [0, 1, -t],
+                    [t, 0, -1], [t, 0, 1], [-t, 0, -1], [-t, 0, 1]
+                ];
+
+                // Нормализуем и масштабируем вершины
+                const scaledVertices = vertices.map(v => {
+                    const length = Math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2]);
+                    return [v[0]/length * 2.5, v[1]/length * 2.5, v[2]/length * 2.5];
+                });
+
+                // Создаем 20 граней (каждая грань - треугольник)
+                const faces = [];
+                // Упрощенный подход - используем вершины как центры граней
+                for (let i = 0; i < 20; i++) {
+                    const phi = Math.acos(1 - 2 * (i + 0.5) / 20);
+                    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
                     
-                    // Равномерное распределение маркеров по поверхности
+                    const x = 2.6 * Math.cos(theta) * Math.sin(phi);
+                    const y = 2.6 * Math.sin(theta) * Math.sin(phi);
+                    const z = 2.6 * Math.cos(phi);
+                    
+                    const normal = [x, y, z];
+                    faces.push({ pos: [x * 0.9, y * 0.9, z * 0.9], normal: normal });
+                }
+
+                faces.forEach((face, index) => {
+                    this.createNumberPlane(index + 1, face.pos, face.normal, 0.8);
+                });
+            }
+
+            addD12Numbers() {
+                // Для d12 используем центры граней додекаэдра
+                for (let i = 1; i <= 12; i++) {
+                    const phi = Math.acos(1 - 2 * (i + 0.5) / 12);
+                    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+                    
+                    const x = 2.9 * Math.cos(theta) * Math.sin(phi);
+                    const y = 2.9 * Math.sin(theta) * Math.sin(phi);
+                    const z = 2.9 * Math.cos(phi);
+                    
+                    const normal = [x, y, z];
+                    this.createNumberPlane(i, [x * 0.85, y * 0.85, z * 0.85], normal, 1.0);
+                }
+            }
+
+            addGenericNumbers() {
+                // Общий метод для других кубиков
+                for (let i = 1; i <= this.sides; i++) {
                     const phi = Math.acos(1 - 2 * (i + 0.5) / this.sides);
                     const theta = Math.PI * (1 + Math.sqrt(5)) * i;
                     
-                    const x = 2.7 * Math.cos(theta) * Math.sin(phi);
-                    const y = 2.7 * Math.sin(theta) * Math.sin(phi);
-                    const z = 2.7 * Math.cos(phi);
+                    const x = 2.8 * Math.cos(theta) * Math.sin(phi);
+                    const y = 2.8 * Math.sin(theta) * Math.sin(phi);
+                    const z = 2.8 * Math.cos(phi);
                     
-                    marker.position.set(x, y, z);
-                    this.scene.add(marker);
+                    const normal = [x, y, z];
+                    this.createNumberPlane(i, [x * 0.9, y * 0.9, z * 0.9], normal, 1.2);
                 }
+            }
+
+            createNumberPlane(number, position, normal, scale) {
+                const texture = createNumberTexture(number);
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
+                    transparent: true,
+                    side: THREE.DoubleSide,
+                    opacity: 0.95
+                });
+
+                const geometry = new THREE.PlaneGeometry(scale, scale);
+                const plane = new THREE.Mesh(geometry, material);
+
+                plane.position.set(...position);
+                
+                // Ориентируем плоскость по нормали (перпендикулярно грани)
+                plane.lookAt(
+                    plane.position.x + normal[0],
+                    plane.position.y + normal[1],
+                    plane.position.z + normal[2]
+                );
+                
+                // Добавляем как дочерний элемент к группе кубика
+                this.diceGroup.add(plane);
             }
 
             roll() {
                 const targetRotation = {
-                    x: Math.random() * Math.PI * 6,
-                    y: Math.random() * Math.PI * 6,
-                    z: Math.random() * Math.PI * 6
+                    x: Math.random() * Math.PI * 8,
+                    y: Math.random() * Math.PI * 8,
+                    z: Math.random() * Math.PI * 8
                 };
                 
-                const startRotation = this.dice.rotation.clone();
+                const startRotation = this.diceGroup.rotation.clone();
                 const duration = 2000;
                 const startTime = Date.now();
                 
@@ -399,9 +547,9 @@
                     const progress = Math.min(elapsed / duration, 1);
                     const easedProgress = 1 - Math.pow(1 - progress, 3);
                     
-                    this.dice.rotation.x = startRotation.x + (targetRotation.x - startRotation.x) * easedProgress;
-                    this.dice.rotation.y = startRotation.y + (targetRotation.y - startRotation.y) * easedProgress;
-                    this.dice.rotation.z = startRotation.z + (targetRotation.z - startRotation.z) * easedProgress;
+                    this.diceGroup.rotation.x = startRotation.x + (targetRotation.x - startRotation.x) * easedProgress;
+                    this.diceGroup.rotation.y = startRotation.y + (targetRotation.y - startRotation.y) * easedProgress;
+                    this.diceGroup.rotation.z = startRotation.z + (targetRotation.z - startRotation.z) * easedProgress;
                     
                     if (progress < 1) {
                         requestAnimationFrame(animateRoll);
@@ -410,16 +558,15 @@
                 
                 animateRoll();
                 
-                // Возвращаем случайное число
                 return Math.floor(Math.random() * this.sides) + 1;
             }
 
             animate() {
                 requestAnimationFrame(() => this.animate());
                 
-                // Медленное вращение в покое
-                this.dice.rotation.y += 0.01;
-                this.dice.rotation.x += 0.005;
+                // Медленное вращение всей группы (кубик + цифры)
+                this.diceGroup.rotation.y += 0.008;
+                this.diceGroup.rotation.x += 0.004;
                 
                 this.renderer.render(this.scene, this.camera);
             }
@@ -488,7 +635,11 @@
             diceTypes.forEach(type => {
                 const canvasId = `${type}-canvas`;
                 if (document.getElementById(canvasId)) {
-                    diceInstances[type] = new SimpleDice3D(canvasId, type);
+                    try {
+                        diceInstances[type] = new DiceWithAttachedNumbers(canvasId, type);
+                    } catch (error) {
+                        console.error(`Error creating ${type}:`, error);
+                    }
                 }
             });
         }
@@ -504,7 +655,7 @@
             
             if (diceInstances[diceType]) {
                 let rolls = 0;
-                const maxRolls = 5;
+                const maxRolls = 6;
                 let finalResult = 1;
                 
                 const rollInterval = setInterval(() => {
@@ -550,7 +701,7 @@
                             }, 1500);
                         }, 500);
                     }
-                }, 400);
+                }, 350);
             }
         }
 
@@ -564,6 +715,7 @@
     </script>
 </body>
 </html>
+
 
 
 
