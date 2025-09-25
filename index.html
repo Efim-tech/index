@@ -191,6 +191,13 @@
                     }else{
                         this.dice.rotation.set(targetRotation.x,targetRotation.y,targetRotation.z);
                         this.isRolling=false; this.showNumber();
+
+                        console.log('${this.type} face ${this.finalResult}:', {
+                            x: this.dice.rotation.x,
+                            y: this.dice.rotation.y,
+                            z: this.dice.rotation.z,
+                        });
+                        
                         if(this.rollCallback)this.rollCallback(this.finalResult);
                     }
                 }; animate();
@@ -263,6 +270,7 @@
     </script>
 </body>
 </html>
+
 
 
 
