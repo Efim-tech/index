@@ -1,124 +1,140 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Game Master - Таверна 🎲</title>
-
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
   <style>
-    
-    :root{
-      --text-color: #f5e9d2;
-      --accent: #ffd700;
-      --panel-bg: rgba(0,0,0,0.35);
-      --panel-wood: rgba(102,60,30,0.15);
-    }
-
-    body{
-      font-family: "Georgia", serif;
-      margin:0;
-      min-height:100vh;
-      color:var(--text-color);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:20px;
-      text-align:center;
-  
-      background: linear-gradient(135deg,#2a1f12 0%, #4b2f16 100%);
+    /* === Стили (тёмный, гармоничный с деревянным столом) === */
+    body {
+      font-family: 'Georgia', serif;
+      
+      background: linear-gradient(135deg,#271b12 0%, #3b2a17 100%);
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      color: #e6dcc8;
+      text-align: center;
+      overflow-x: hidden;
       background-size: cover;
+      background-repeat: no-repeat;
+      background-position: center center;
     }
 
-    /* Мягкая дымка */
-    .fog-layer{
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background:
-        radial-gradient(circle at 50% 20%, rgba(255,255,255,0.06), transparent 48%),
-        radial-gradient(circle at 80% 80%, rgba(255,255,255,0.03), transparent 35%),
-        radial-gradient(circle at 20% 60%, rgba(255,255,255,0.04), transparent 42%);
-      z-index:1;
-      animation: fogDrift 24s linear infinite;
+    .fog-layer {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      background: radial-gradient(circle at 50% 20%, rgba(255,255,255,0.06), transparent 70%),
+                  radial-gradient(circle at 80% 80%, rgba(255,255,255,0.03), transparent 60%),
+                  radial-gradient(circle at 20% 60%, rgba(255,255,255,0.04), transparent 65%);
+      animation: fogMove 20s infinite linear;
+      z-index: 1;
     }
-    @keyframes fogDrift{
-      0%{transform:translate(0,0)}
-      50%{transform:translate(-18px,12px)}
-      100%{transform:translate(0,0)}
-    }
-
-    .container{
-      width:100%;
-      max-width:420px;
-      z-index:2; /* над дымкой */
+    @keyframes fogMove {
+      0% { transform: translate(0,0); }
+      50% { transform: translate(-20px,10px); }
+      100% { transform: translate(0,0); }
     }
 
-    .header{ margin-bottom:1rem; text-shadow:2px 2px 8px rgba(0,0,0,0.7); }
-    h1{ margin:0; font-size:1.6rem; }
-    p.sub{ margin:6px 0 0; color:#e7d9c4; opacity:0.95; }
-
-    .tabs{ display:flex; gap:8px; justify-content:center; margin:14px 0 8px; flex-wrap:wrap; }
-    .tab-button{
-      padding:8px 12px; border-radius:18px; border:0;
-      background: rgba(0,0,0,0.45); color:var(--text-color); cursor:pointer;
-      font-weight:700; box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    .container { width: 100%; max-width: 400px; position: relative; z-index: 2; }
+    .header { margin-bottom: 1.5rem; text-shadow: 2px 2px 6px rgba(0,0,0,0.7); }
+    .tabs { display:flex; justify-content:center; gap:5px; margin-bottom:1.5rem; flex-wrap:wrap; }
+    .tab-button {
+      background: rgba(0,0,0,0.45);
+      border: none;
+      padding: 10px 15px;
+      border-radius: 20px;
+      color: #e6dcc8;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.25s ease;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
     }
-    .tab-button:hover{ transform:translateY(-1px); }
-    .tab-button.active{ background: linear-gradient(45deg,#a67c52,#6b4226); box-shadow:0 6px 18px rgba(0,0,0,0.6); }
-    .tab-button.locked{ opacity:0.6; cursor:not-allowed; background: rgba(0,0,0,0.28) !important; }
-    .tab-button.locked::after{ content:" 🔒"; margin-left:6px; font-size:0.85em; }
-
-    .lock-message{
-      margin:10px auto; padding:10px; border-radius:10px;
-      background: rgba(60,12,12,0.6); color:#ffd9d9; border:1px solid rgba(255,80,80,0.2);
-      box-shadow:0 4px 12px rgba(0,0,0,0.6);
+    .tab-button:hover { transform: translateY(-2px); }
+    .tab-button.active {
+      background: linear-gradient(45deg,#7f5a32,#4a2d18);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.55);
     }
-
-    .dice-content{ display:none; }
-    .dice-content.active{ display:block; }
-
-    .dice-scene{
-      width:200px; height:200px; margin:18px auto; position:relative;
-      background: var(--panel-bg); border-radius:12px;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.6);
-      backdrop-filter: blur(2px);
-      overflow:hidden;
+    .tab-button.locked {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: rgba(0,0,0,0.32) !important;
     }
+    .tab-button.locked::after { content: " 🔒"; font-size: 0.8em; }
 
-    canvas.dice-canvas{ width:100%; height:100%; display:block; border-radius:12px; }
-
-    .dice-number{
-      position:absolute; left:50%; top:50%;
-      transform:translate(-50%,-50%);
-      font-size:3rem; font-weight:800; color:var(--accent);
-      text-shadow:0 0 18px rgba(255,215,0,0.35), 0 2px 6px rgba(0,0,0,0.85);
-      z-index:10; opacity:0; transition:all .45s ease;
+    .lock-message {
+      background: rgba(60, 12, 12, 0.6);
+      border: 1px solid rgba(255, 60, 60, 0.15);
+      padding: 10px;
+      border-radius: 10px;
+      margin: 10px 0;
+      font-size: 0.9rem;
+      color: #ffd7d7;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
     }
 
-    .auto-roll-status{
-      margin-top:8px; color:var(--accent);
-      font-weight:700; text-shadow:0 0 10px rgba(255,215,0,0.25);
+    .dice-content { display: none; }
+    .dice-content.active { display: block; }
+
+    .dice-scene {
+      width: 200px;
+      height: 200px;
+      margin: 1.5rem auto;
+      position: relative;
+      background: rgba(0,0,0,0.35);
+      border-radius: 12px;
+      box-shadow: 0 10px 26px rgba(0,0,0,0.6);
+      overflow: hidden;
+    }
+
+    canvas.dice-canvas { width:100%; height:100%; display:block; border-radius:12px; }
+
+    .dice-number {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      font-weight: 800;
+      color: #ffd700;
+      text-shadow: 0 0 16px rgba(255,215,0,0.25), 0 3px 8px rgba(0,0,0,0.7);
+      z-index: 100;
+      opacity: 0;
+      transition: all 0.45s ease;
+      pointer-events: none;
+    }
+
+    .auto-roll-status {
+      font-size: 1.1rem;
+      margin-top: 12px;
+      color: #ffd700;
+      text-shadow: 0 0 10px rgba(255,215,0,0.18);
+      font-weight: 700;
       animation: pulse 1.6s infinite;
     }
-    @keyframes pulse{ 0%,100%{ opacity:1 } 50%{ opacity:.7 } }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.75} }
 
-    
-    @media (max-width:420px){
-      .container{ padding:0 8px; }
-      .dice-scene{ width:180px; height:180px; }
-      .dice-number{ font-size:2.6rem; }
+    @media (max-width:420px) {
+      .dice-scene { width:180px; height:180px; }
+      .dice-number { font-size:2.6rem; }
     }
   </style>
 </head>
 <body>
+
   <div class="fog-layer" aria-hidden="true"></div>
 
   <div class="container">
     <div class="header">
       <h1>🍺 Dice Master</h1>
-      <p class="sub">Кости на столе таверны</p>
+      <p>Кости на столе таверны</p>
     </div>
 
     <div class="tabs">
@@ -134,7 +150,7 @@
       ⚠️ Этот кубик недоступен для броска. Бот выберет нужный кубик автоматически.
     </div>
 
-    <!-- сцены -->
+    <!-- Контейнеры -->
     <div id="d4-content" class="dice-content">
       <div class="dice-scene">
         <canvas class="dice-canvas" id="d4-canvas"></canvas>
@@ -184,49 +200,60 @@
     </div>
   </div>
 
-  <!-- === Аудио: путь по умолчанию === -->
+  <!-- аудио  -->
   <audio id="dice-sound" preload="auto">
-    <source id="dice-sound-src" src="./assets/dice_roll.mp3" type="audio/mpeg" />
+    <source id="dice-sound-src" src="./assets/dice_roll.mp3" type="audio/mpeg">
   </audio>
 
   <script>
-    // === Константы для лёгкой настройки (если у тебя другие имена файлов — поменяй тут) ===
+    // === Параметры: пути к файлам  ===
     const BG_IMAGE = './assets/wood.jpg';           
     const DICE_SOUND_SRC = './assets/dice_roll.mp3';
 
-    // Попробуем динамически установить фон (если файл лежит по указанному пути)
-    (function setBackground() {
+    // Telegram WebApp init (если в WebApp)
+    const tg = window.Telegram?.WebApp || window.TelegramWebApp || null;
+    try { if (tg?.expand) tg.expand(); if (tg?.BackButton) tg.BackButton.hide(); } catch(e){/* ignore */ }
+
+    // Попытка установить фон (fallback—градиент из CSS останется, если картинка не найдена)
+    (function setBg(){
       const img = new Image();
-      img.onload = () => { document.body.style.backgroundImage = `url("${BG_IMAGE}")`; document.body.style.backgroundSize='cover'; };
-      img.onerror = () => { console.warn('Фон не найден по пути', BG_IMAGE);};
+      img.onload = () => { document.body.style.backgroundImage = `url("${BG_IMAGE}")`; document.body.style.backgroundSize = 'cover'; };
+      img.onerror = () => { console.info('Фон (wood.jpg) не найден по пути', BG_IMAGE, '— будет использован градиент.'); };
       img.src = BG_IMAGE;
     })();
 
-    // Подставляем источник звука 
-    document.getElementById('dice-sound-src').src = DICE_SOUND_SRC;
+    // Подставляем звук 
+    const diceSoundSrcEl = document.getElementById('dice-sound-src');
+    if(diceSoundSrcEl) diceSoundSrcEl.src = DICE_SOUND_SRC;
     const diceSound = document.getElementById('dice-sound');
 
-    // === Telegram WebApp init ===
-    const tg = window.Telegram?.WebApp;
-    if(tg){
-      try{ tg.expand(); tg.BackButton && tg.BackButton.hide(); }catch(e){/* ignore */ }
-    }
-
-    // Цвета и результаты
-    const diceColors = { d4:'#8f5b5b', d6:'#4ECDC4', d8:'#c18b2f', d10:'#6BCF7F', d12:'#7b4d8f', d20:'#3a6fa5' };
-    const resultColors = { critical:'#4ecdc4', success:'#ffd700', normal:'#ffa86b', failure:'#ff6b6b' };
-
-    // === Эталонные координаты (твои значения) ===
-    const baseOrientations = {
-      d4:  { x: -0.66, y: -10.21, z: 0 },
-      d6:  { x:  3.14, y:  0.01, z: 0 },
-      d8:  { x: -2.46, y: -0.78, z: 0 },
-      d10: { x:  0.62, y:  1.56, z: 0 },
-      d12: { x:  0.60, y:  1.55, z: 0 },
-      d20: { x: -1.10, y: -0.01, z: 0 }
+    // === Цвета кубиков (тёмные, гармоничные). 
+    const diceColors = {
+      d4:  '#6d2f2f', // тёмный бордо
+      d6:  '#ffffff', // белый (особый)
+      d8:  '#7a5b2f', // тёмное золото/дуб
+      d10: '#2f5b45', // глубокий зелёный
+      d12: '#5a3f66', // фиолетово-коричневый
+      d20: '#264056'  // глубокий синий
     };
 
-    // === Класс кубика ===
+    const resultColors = {
+      critical: '#ffd700',
+      success:  '#ffd700',
+      normal:   '#ffa86b',
+      failure:  '#ff6b6b'
+    };
+
+    // эталонные ориентации
+    const baseOrientations = {
+      d4:  {x:-0.66, y:-10.21, z:0},
+      d6:  {x:3.14,  y:0.01,   z:0},
+      d8:  {x:-2.46, y:-0.78,  z:0},
+      d10: {x:0.62,  y:1.56,   z:0},
+      d12: {x:0.60,  y:1.55,   z:0},
+      d20: {x:-1.10, y:-0.01,  z:0}
+    };
+
     class ModernDice3D {
       constructor(canvasId, type) {
         this.canvas = document.getElementById(canvasId);
@@ -238,31 +265,33 @@
         this.init();
       }
 
-      getSidesCount() {
-        return { d4:4, d6:6, d8:8, d10:10, d12:12, d20:20 }[this.type] || 6;
+      getSidesCount(){
+        return {d4:4,d6:6,d8:8,d10:10,d12:12,d20:20}[this.type] || 6;
       }
 
-      init() {
+      init(){
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
         this.camera.position.z = 6;
 
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
         this.renderer.setSize(200, 200);
-        this.renderer.setClearColor(0x000000, 0); // прозрачность
+        this.renderer.setClearColor(0x000000, 0);
 
         // свет
-        this.scene.add( new THREE.AmbientLight(0xffffff, 0.55) );
-        const dl = new THREE.DirectionalLight(0xffffff, 0.9);
-        dl.position.set(3,5,5);
+        this.scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+        const dl = new THREE.DirectionalLight(0xffffff, 0.85);
+        dl.position.set(3, 5, 5);
         this.scene.add(dl);
 
-        // материал и геометрия (простые материалы для многогранников)
+        // материал
+        const matColor = diceColors[this.type] || '#444444';
         const material = new THREE.MeshPhongMaterial({
-          color: diceColors[this.type],
-          shininess: 40,
+          color: matColor,
+          shininess: 25,
           specular: 0x222222
         });
+
         const geometry = this.getGeometry();
         this.dice = new THREE.Mesh(geometry, material);
         this.scene.add(this.dice);
@@ -287,72 +316,74 @@
         this.isRolling = true;
         this.finalResult = Math.floor(Math.random() * this.sides) + 1;
 
-        // Скрываем прошлое число
+        // прячем число
         if(this.numberElement){ this.numberElement.style.opacity = '0'; this.numberElement.style.animation = 'none'; }
 
+        // play sound 
         if(diceSound){
-          diceSound.currentTime = 0;
-          diceSound.play().catch((err) => {
-            
-            console.warn('Аудио не воспроизведено автоматически:', err?.message || err);
-          });
+          try{
+            diceSound.currentTime = 0;
+            const p = diceSound.play();
+            if(p && p.catch) p.catch(()=>{/* ignore */});
+          }catch(e){ /* ignore */ }
         }
 
-        // Рассчитываем цель (точные эталонные координаты)
-        const base = baseOrientations[this.type] || { x:0, y:0, z:0 };
+        const base = baseOrientations[this.type] || {x:0,y:0,z:0};
         const target = { x: base.x, y: base.y, z: base.z };
-
-        // Начальная точка
         const start = { x: this.dice.rotation.x, y: this.dice.rotation.y, z: this.dice.rotation.z };
 
-        const spins = 3; // сколько полных оборотов 
+        // визуально "много оборотов" — затем плавный финал
+        const spins = 3; // полных оборота 
         const extra = spins * 2 * Math.PI;
 
-        const startTime = Date.now();
-        const fastPhase = 900;   // быстрая фаза
-        const slowPhase = 900;   // замедление
+        const fastPhase = 900; // ms
+        const slowPhase = 900; // ms
         const total = fastPhase + slowPhase;
+        const startTime = Date.now();
 
-        const animate = () => {
+        const step = () => {
           const elapsed = Date.now() - startTime;
           if(elapsed < fastPhase){
-            // интенсивное вращение — интерполируем между стартом и "разогнанной" позицией (target + extra)
             const p = elapsed / fastPhase;
             const e = this.easeOutCubic(p);
             this.dice.rotation.x = start.x + (target.x + extra - start.x) * e;
             this.dice.rotation.y = start.y + (target.y + extra - start.y) * e;
             this.dice.rotation.z = start.z + (target.z + extra - start.z) * e;
-            requestAnimationFrame(animate);
+            requestAnimationFrame(step);
             return;
           }
-
           if(elapsed < total){
-            // замедление — плавно уводим от (target+extra) к target
-            const p = (elapsed - fastPhase) / slowPhase; // 0..1
+            const p = (elapsed - fastPhase) / slowPhase;
             const e = this.easeOutCubic(p);
             const from = { x: target.x + extra, y: target.y + extra, z: target.z + extra };
             this.dice.rotation.x = from.x + (target.x - from.x) * e;
             this.dice.rotation.y = from.y + (target.y - from.y) * e;
             this.dice.rotation.z = from.z + (target.z - from.z) * e;
-            requestAnimationFrame(animate);
+            requestAnimationFrame(step);
             return;
           }
-
-          // Фиксируем точную целевую ориентацию и завершаем
+          // финиш: точная ориентация 
           this.dice.rotation.set(target.x, target.y, target.z);
           this.isRolling = false;
           this.showNumber();
           if(typeof callback === 'function') callback(this.finalResult);
         };
 
-        animate();
+        step();
       }
 
       showNumber(){
         if(!this.numberElement || !this.finalResult) return;
         this.numberElement.textContent = this.finalResult;
-        this.numberElement.style.animation = 'numberAppear 0.5s ease-out';
+        this.numberElement.style.animation = 'numberAppear 0.6s ease-out';
         this.numberElement.style.opacity = '1';
+
+        // цвет числа: для d6 (белый куб) — ставим тёмный текст
+        if(this.type === 'd6'){
+          this.numberElement.style.color = '#111111';
+          this.numberElement.style.textShadow = '0 1px 2px rgba(0,0,0,0.6)';
+          return;
+        }
 
         const percent = (this.finalResult / this.sides) * 100;
         let color = resultColors.normal;
@@ -367,23 +398,21 @@
 
       animate(){
         requestAnimationFrame(()=>this.animate());
-        // не трогаем idle animation, т.к. вращение в покое выключено при броске
         this.renderer.render(this.scene, this.camera);
       }
     }
 
-    // === Инициализация и UI ===
+    // === UI / init ===
     let diceInstances = {};
     function initializeDice(){
       ['d4','d6','d8','d10','d12','d20'].forEach(type=>{
-        const canvasId = `${type}-canvas`;
-        if(document.getElementById(canvasId)){
-          try{ diceInstances[type] = new ModernDice3D(canvasId, type); } catch(e){ console.error('Init error', type, e); }
+        const id = `${type}-canvas`;
+        if(document.getElementById(id)){
+          try{ diceInstances[type] = new ModernDice3D(id, type); } catch(e){ console.error('dice init error', type, e); }
         }
       });
     }
 
-    // Блокировка вкладок (как было в исходнике)
     function activateAllowedDice(diceType){
       document.querySelectorAll('.tab-button').forEach(btn=>{ btn.classList.add('locked'); btn.classList.remove('active'); });
       document.querySelectorAll('.dice-content').forEach(c=>c.classList.remove('active'));
@@ -392,62 +421,64 @@
       if(b && cont){ b.classList.remove('locked'); b.classList.add('active'); cont.classList.add('active'); document.getElementById('lockMessage').style.display='none'; }
     }
 
-    // Клики на табы — показываем сообщение если заблокировано
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.tab-button');
-      if(!btn) return;
-      if(btn.classList.contains('locked')){
-        const lm = document.getElementById('lockMessage');
-        lm.style.display='block';
-        setTimeout(()=>{ lm.style.display='none'; }, 2800);
-        return;
-      }
-      // если не заблокирован — переключаем вручную (редко используется)
-      document.querySelectorAll('.tab-button').forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelectorAll('.dice-content').forEach(c=>c.classList.remove('active'));
-      const id = btn.getAttribute('data-tab');
-      const cont = document.getElementById(`${id}-content`);
-      if(cont) cont.classList.add('active');
+    document.querySelectorAll('.tab-button').forEach(button=>{
+      button.addEventListener('click', ()=>{
+        if(button.classList.contains('locked')){
+          const lm = document.getElementById('lockMessage');
+          lm.style.display = 'block';
+          setTimeout(()=>{ lm.style.display='none'; }, 2800);
+          return;
+        }
+        // если не заблокирован — локальное переключение (на случай отладки)
+        document.querySelectorAll('.tab-button').forEach(b=>b.classList.remove('active'));
+        button.classList.add('active');
+        document.querySelectorAll('.dice-content').forEach(c=>c.classList.remove('active'));
+        const id = button.getAttribute('data-tab');
+        const cont = document.getElementById(`${id}-content`);
+        if(cont) cont.classList.add('active');
+      });
     });
 
-    // Автоброс (бот выбирает кубик) — старая логика
+    const urlParams = new URLSearchParams(window.location.search);
+    const allowedDice = urlParams.get('dice') || 'd20';
     let autoRollExecuted = false;
+
     function autoRollDice(){
       if(autoRollExecuted) return;
       autoRollExecuted = true;
-      const urlParams = new URLSearchParams(window.location.search);
-      const allowedDice = urlParams.get('dice') || 'd20';
       if(diceInstances[allowedDice]){
-        // отключим авторотацию в покое (если добавлять later)
-        // Запустим бросок
         diceInstances[allowedDice].roll((finalResult) => {
-          // немного подождём, чтобы игрок увидел результат
           setTimeout(()=>{
-            if(window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.sendData === 'function'){
-              try{ Telegram.WebApp.sendData(JSON.stringify({ action:'dice_roll', dice_type: allowedDice, value: finalResult })); }catch(e){ console.warn(e); }
-            }
-            setTimeout(()=>{ try{ if(TgClose){} }catch(e){} }, 1500);
-            // NOTE: tg.close() может быть вызван в реальной интеграции
-          }, 850);
+            // отправляем данные боту, если есть интерфейс
+            try{
+              if(window.Telegram && Telegram.WebApp && typeof Telegram.WebApp.sendData === 'function'){
+                Telegram.WebApp.sendData(JSON.stringify({ action: 'dice_roll', dice_type: allowedDice, value: finalResult }));
+              } else if (tg && typeof tg.sendData === 'function') {
+                tg.sendData(JSON.stringify({ action: 'dice_roll', dice_type: allowedDice, value: finalResult }));
+              }
+            }catch(e){ console.warn('sendData error', e); }
+            // закрытие WebApp — оставляем комментарием: tg.close() по необходимости
+            // setTimeout(()=>{ if(tg && typeof tg.close === 'function') tg.close(); }, 1200);
+          }, 900);
         });
+      } else {
+        console.warn('autoRollDice: instance missing for', allowedDice);
       }
     }
 
-    // DOM ready
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', ()=>{
+      // установим источник звука 
+      const snd = document.getElementById('dice-sound-src');
+      if(snd) snd.src = DICE_SOUND_SRC;
+
       initializeDice();
-      // активируем вкладку, которую выбрал бот (или d6 по умолчанию)
-      const urlParams = new URLSearchParams(window.location.search);
-      const allowed = urlParams.get('dice') || 'd6';
-      activateAllowedDice(allowed);
-      // Запускаем автоброс
+      activateAllowedDice(allowedDice);
       setTimeout(autoRollDice, 900);
     });
-
   </script>
 </body>
 </html>
+
 
 
 
