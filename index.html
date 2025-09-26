@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Master - Современные 3D кубики</title>
+  <title>Game Master - 3D Кубики с магическими текстурами</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
@@ -22,14 +22,13 @@
       overflow-x: hidden;
     }
     .container { width: 100%; max-width: 400px; }
-    .header { margin-bottom: 1.5rem; z-index: 10; }
+    .header { margin-bottom: 1.5rem; }
     .tabs { display: flex; justify-content: center; gap: 5px; margin-bottom: 1.5rem; flex-wrap: wrap; }
     .tab-button {
-      background: rgba(255, 255, 255, 0.1); border: none;
-      padding: 10px 15px; border-radius: 20px; color: white;
-      cursor: pointer; font-weight: bold; transition: all 0.3s ease;
+      background: rgba(255, 255, 255, 0.1); border: none; padding: 10px 15px;
+      border-radius: 20px; color: white; cursor: pointer; font-weight: bold;
+      transition: all 0.3s ease;
     }
-    .tab-button:hover { background: rgba(255, 255, 255, 0.2); }
     .tab-button.active {
       background: linear-gradient(45deg, #667eea, #764ba2);
       box-shadow: 0 4px 15px rgba(0,0,0,0.3);
@@ -47,12 +46,6 @@
     .dice-content.active { display: block; }
     .dice-scene { width: 200px; height: 200px; margin: 1.5rem auto; position: relative; }
     .dice-canvas { width: 100%; height: 100%; border-radius: 15px; }
-    .dice-number {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      font-size: 3rem; font-weight: bold; color: white;
-      text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
-      z-index: 100; opacity: 0; transition: all 0.5s ease;
-    }
     .auto-roll-status {
       font-size: 1.2rem; margin: 1.5rem 0; color: #ffd700;
       text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); font-weight: bold;
@@ -76,7 +69,7 @@
   <div class="container">
     <div class="header">
       <h1>🎲 Dice Master</h1>
-      <p>Современные 3D кубики</p>
+      <p>Магические 3D кубики</p>
     </div>
 
     <div class="tabs">
@@ -93,12 +86,12 @@
     </div>
 
     <!-- Контейнеры -->
-    <div id="d4-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d4-canvas"></canvas><div class="dice-number" id="d4-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d6-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d6-canvas"></canvas><div class="dice-number" id="d6-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d8-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d8-canvas"></canvas><div class="dice-number" id="d8-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d10-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d10-canvas"></canvas><div class="dice-number" id="d10-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d12-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d12-canvas"></canvas><div class="dice-number" id="d12-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d20-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d20-canvas"></canvas><div class="dice-number" id="d20-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+    <div id="d4-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d4-canvas"></canvas></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+    <div id="d6-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d6-canvas"></canvas></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+    <div id="d8-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d8-canvas"></canvas></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+    <div id="d10-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d10-canvas"></canvas></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+    <div id="d12-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d12-canvas"></canvas></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+    <div id="d20-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d20-canvas"></canvas></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
   </div>
 
   <script>
@@ -106,8 +99,32 @@
     const urlParams = new URLSearchParams(window.location.search);
     const allowedDice = urlParams.get('dice') || 'd20';
 
-    const diceColors = { d4:'#FF6B6B', d6:'#4ECDC4', d8:'#FFD93D', d10:'#6BCF7F', d12:'#9B59B6', d20:'#3498DB' };
-    const resultColors = {critical:'#4ecdc4',success:'#ffd700',normal:'#ffa86b',failure:'#ff6b6b'};
+    // 🎨 Создание магической текстуры для грани
+    function createFaceTexture(text, bgColor="#111", textColor="#0ff") {
+      const size = 256;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+
+      // фон
+      const gradient = ctx.createRadialGradient(size/2, size/2, 20, size/2, size/2, size/2);
+      gradient.addColorStop(0, bgColor);
+      gradient.addColorStop(1, "#000");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, size, size);
+
+      // цифра
+      ctx.font = "bold 140px Arial";
+      ctx.fillStyle = textColor;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.shadowColor = textColor;
+      ctx.shadowBlur = 30;
+      ctx.fillText(text, size/2, size/2);
+
+      return new THREE.CanvasTexture(canvas);
+    }
 
     // 📌 Твои эталонные координаты
     const baseOrientations = {
@@ -123,7 +140,6 @@
       constructor(canvasId,type){
         this.canvas=document.getElementById(canvasId);
         this.type=type; this.sides=this.getSidesCount();
-        this.numberElement=document.getElementById(`${type}-number`);
         this.isRolling=false; this.finalResult=null;
         this.init();
       }
@@ -136,9 +152,17 @@
         this.renderer.setSize(200,200);
         this.scene.add(new THREE.AmbientLight(0xffffff,0.6));
         const dl=new THREE.DirectionalLight(0xffffff,0.8); dl.position.set(3,5,5); this.scene.add(dl);
-        const material=new THREE.MeshPhongMaterial({color:diceColors[this.type]});
+
         const geometry=this.getGeometry();
-        this.dice=new THREE.Mesh(geometry,material);
+        const materials=[];
+        for(let i=1;i<=this.sides;i++){
+          materials.push(new THREE.MeshStandardMaterial({
+            map: createFaceTexture(i, "#111", "#0ff"),
+            emissive: new THREE.Color(0x00ffff),
+            emissiveIntensity: 0.6
+          }));
+        }
+        this.dice=new THREE.Mesh(geometry,materials);
         this.scene.add(this.dice);
         this.animate();
       }
@@ -156,7 +180,6 @@
         if(this.isRolling)return;
         this.isRolling=true;
         this.finalResult=Math.floor(Math.random()*this.sides)+1;
-        if(this.numberElement){this.numberElement.style.opacity=0;}
         const base=baseOrientations[this.type];
         const target={x:base.x,y:base.y,z:base.z};
         const start={x:this.dice.rotation.x,y:this.dice.rotation.y,z:this.dice.rotation.z};
@@ -172,22 +195,10 @@
           }else{
             this.dice.rotation.set(target.x,target.y,target.z);
             this.isRolling=false;
-            this.showNumber();
             if(callback)callback(this.finalResult);
           }
         };
         animateStep();
-      }
-      showNumber(){
-        if(this.numberElement&&this.finalResult){
-          this.numberElement.textContent=this.finalResult;
-          this.numberElement.style.animation='numberAppear 0.6s ease-out';
-          this.numberElement.style.opacity=1;
-          const percent=(this.finalResult/this.sides)*100;
-          let color=percent>=80?resultColors.critical:percent>=50?resultColors.success:percent>=20?resultColors.normal:resultColors.failure;
-          this.numberElement.style.color=color;
-          this.numberElement.style.textShadow=`0 0 20px ${color}80, 0 0 30px ${color}80`;
-        }
       }
       easeOutCubic(t){return 1-Math.pow(1-t,3);}
       animate(){requestAnimationFrame(()=>this.animate());this.renderer.render(this.scene,this.camera);}
@@ -208,14 +219,14 @@
       if(b&&cont){b.classList.remove('locked');b.classList.add('active');cont.classList.add('active');document.getElementById('lockMessage').style.display='none';}
     }
 
-    document.querySelectorAll('.tab-button').forEach(button=>{
-      button.addEventListener('click',()=>{
-        if(button.classList.contains('locked')){
-          document.getElementById('lockMessage').style.display='block';
-          setTimeout(()=>{document.getElementById('lockMessage').style.display='none';},3000); return;
-        }
-      });
-    });
+    function createParticles(){
+      const c=document.getElementById('particles');
+      for(let i=0;i<15;i++){const p=document.createElement('div');p.className='particle';
+        p.style.width=Math.random()*6+2+'px';p.style.height=p.style.width;
+        p.style.left=Math.random()*100+'%';p.style.top=Math.random()*100+'%';
+        p.style.animationDelay=Math.random()*6+'s';p.style.animationDuration=Math.random()*4+4+'s';
+        c.appendChild(p);}
+    }
 
     let autoRollExecuted=false;
     function autoRollDice(){
@@ -231,15 +242,6 @@
       }
     }
 
-    function createParticles(){
-      const c=document.getElementById('particles');
-      for(let i=0;i<15;i++){const p=document.createElement('div');p.className='particle';
-        p.style.width=Math.random()*6+2+'px';p.style.height=p.style.width;
-        p.style.left=Math.random()*100+'%';p.style.top=Math.random()*100+'%';
-        p.style.animationDelay=Math.random()*6+'s';p.style.animationDuration=Math.random()*4+4+'s';
-        c.appendChild(p);}
-    }
-
     document.addEventListener('DOMContentLoaded',()=>{
       createParticles(); initializeDice(); activateAllowedDice(allowedDice);
       setTimeout(autoRollDice,1000);
@@ -247,6 +249,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
