@@ -85,8 +85,8 @@
     .dice-content.active { display: block; }
 
     .dice-scene {
-      width: 200px;
-      height: 200px;
+      width: 300px;
+      height: 300px;
       margin: 1.5rem auto;
       position: relative;
       background: rgba(0,0,0,0.35);
@@ -272,10 +272,10 @@
       init(){
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-        this.camera.position.z = 6;
+        this.camera.position.z = 7;
 
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true, alpha: true });
-        this.renderer.setSize(200, 200);
+        this.renderer.setSize(300, 300);
         this.renderer.setClearColor(0x000000, 0);
 
         // свет
@@ -478,6 +478,7 @@
   </script>
 </body>
 </html>
+
 
 
 
