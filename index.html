@@ -3,23 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game Master - Таверна 🎲</title>
+  <title>Game Master - Персонаж 🎲</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <style>
+    :root {
+      --primary-color: #8b4513;
+      --secondary-color: #daa520;
+      --danger-color: #dc3545;
+      --success-color: #28a745;
+      --info-color: #17a2b8;
+      --dark-bg: rgba(0, 0, 0, 0.7);
+      --light-text: #f5f5dc;
+    }
+
     body {
       font-family: 'Georgia', serif;
-      background: url("./assets/wood.jpg") no-repeat center center fixed; /* фон столешницы */
+      background: url("./assets/wood.jpg") no-repeat center center fixed;
       background-size: cover;
       margin: 0;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      color: #f5f5dc;
-      text-align: center;
+      padding: 0;
+      color: var(--light-text);
       overflow-x: hidden;
     }
 
@@ -34,57 +38,198 @@
       animation: fogMove 20s infinite linear;
       z-index: 1;
     }
+
     @keyframes fogMove {
       0% { transform: translate(0,0); }
       50% { transform: translate(-20px,10px); }
       100% { transform: translate(0,0); }
     }
 
-    .container { width: 100%; max-width: 400px; position: relative; z-index: 2; }
-    .header { margin-bottom: 1.5rem; text-shadow: 2px 2px 6px rgba(0,0,0,0.8); }
-    .tabs { display: flex; justify-content: center; gap: 5px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .container {
+      width: 100%;
+      max-width: 400px;
+      position: relative;
+      z-index: 2;
+      padding: 10px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 5px;
+      margin-bottom: 1rem;
+      flex-wrap: wrap;
+    }
+
     .tab-button {
-      background: rgba(0,0,0,0.5);
-      border: none;
-      padding: 10px 15px;
-      border-radius: 20px;
-      color: #f5f5dc;
+      background: var(--dark-bg);
+      border: 1px solid var(--secondary-color);
+      padding: 8px 12px;
+      border-radius: 15px;
+      color: var(--light-text);
       cursor: pointer;
       font-weight: bold;
       transition: all 0.3s ease;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+      font-size: 0.9rem;
     }
+
     .tab-button.active {
-      background: linear-gradient(45deg, #a67c52, #6b4226);
+      background: linear-gradient(45deg, var(--primary-color), #6b4226);
       box-shadow: 0 4px 15px rgba(0,0,0,0.5);
     }
-    .tab-button.locked {
-      opacity: 0.6;
-      cursor: not-allowed;
-      background: rgba(0,0,0,0.3) !important;
-    }
-    .tab-button.locked::after { content: " 🔒"; font-size: 0.8em; }
 
-    .lock-message {
-      background: rgba(50, 0, 0, 0.5);
-      border: 1px solid rgba(255, 0, 0, 0.5);
+    .content-section {
+      display: none;
+      background: var(--dark-bg);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 1rem;
+      border: 1px solid var(--secondary-color);
+    }
+
+    .content-section.active {
+      display: block;
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Стили для характеристик */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .stat-card {
+      background: rgba(139, 69, 19, 0.3);
+      border-radius: 10px;
       padding: 10px;
+      text-align: center;
+      border: 1px solid var(--secondary-color);
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--secondary-color);
+      text-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      opacity: 0.8;
+    }
+
+    .health-bar, .energy-bar, .armor-bar {
+      height: 20px;
+      background: rgba(0, 0, 0, 0.5);
       border-radius: 10px;
       margin: 10px 0;
-      font-size: 0.9rem;
-      text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+      overflow: hidden;
+      position: relative;
     }
 
-    .dice-content { display: none; }
-    .dice-content.active { display: block; }
+    .health-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--danger-color), var(--success-color));
+      border-radius: 10px;
+      transition: width 0.5s ease;
+    }
 
+    .energy-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b6b, #ffd700);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+    }
+
+    .armor-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #4682b4, #87ceeb);
+      border-radius: 10px;
+      transition: width 0.5s ease;
+    }
+
+    .bar-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-weight: bold;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    }
+
+    /* Стили для инвентаря */
+    .inventory-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 10px;
+    }
+
+    .item-card {
+      background: rgba(139, 69, 19, 0.3);
+      border-radius: 8px;
+      padding: 8px;
+      text-align: center;
+      border: 1px solid var(--secondary-color);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .item-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .item-icon {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+
+    .item-name {
+      font-size: 0.7rem;
+      margin-bottom: 3px;
+    }
+
+    .item-quantity {
+      font-size: 0.6rem;
+      background: var(--primary-color);
+      border-radius: 10px;
+      padding: 1px 5px;
+    }
+
+    .item-equipped {
+      border-color: var(--success-color);
+      box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+    }
+
+    /* Стили для кубиков */
     .dice-scene {
-      width: 220px;   /* увеличено пространство */
+      width: 220px;
       height: 220px;
       margin: 1.5rem auto;
       position: relative;
     }
-    .dice-canvas { width: 100%; height: 100%; border-radius: 12px; display: block; margin: 0 auto; }
+
+    .dice-canvas {
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      display: block;
+      margin: 0 auto;
+    }
 
     .dice-number {
       position: absolute;
@@ -107,37 +252,128 @@
       font-weight: bold;
       animation: pulse 1.5s infinite;
     }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.7} }
+
+    @keyframes pulse {
+      0%,100% { opacity: 1; }
+      50% { opacity: .7; }
+    }
+
+    .lock-message {
+      background: rgba(50, 0, 0, 0.5);
+      border: 1px solid rgba(255, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 10px;
+      margin: 10px 0;
+      font-size: 0.9rem;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.8);
+    }
+
+    /* Адаптивность */
+    @media (max-width: 480px) {
+      .container {
+        padding: 5px;
+      }
+      
+      .tab-button {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+      }
+      
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .inventory-grid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+      }
+    }
   </style>
 </head>
 <body>
   <div class="fog-layer"></div>
   <div class="container">
     <div class="header">
-      <h1>🍺 Dice Master</h1>
-      <p>Кости на столе таверны</p>
+      <h1>🎮 Game Master</h1>
+      <p id="character-name">Загрузка персонажа...</p>
     </div>
 
     <div class="tabs">
-      <button class="tab-button locked" data-tab="d4">D4</button>
-      <button class="tab-button locked" data-tab="d6">D6</button>
-      <button class="tab-button locked" data-tab="d8">D8</button>
-      <button class="tab-button locked" data-tab="d10">D10</button>
-      <button class="tab-button locked" data-tab="d12">D12</button>
-      <button class="tab-button locked" data-tab="d20">D20</button>
+      <button class="tab-button active" data-tab="stats">📊 Характеристики</button>
+      <button class="tab-button" data-tab="inventory">🎒 Инвентарь</button>
+      <button class="tab-button" data-tab="dice">🎲 Кубики</button>
     </div>
 
-    <div id="lockMessage" class="lock-message" style="display: none;">
-      ⚠️ Этот кубик недоступен для броска. Бот выберет нужный кубик автоматически.
+    <!-- Вкладка характеристик -->
+    <div id="stats-content" class="content-section active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value" id="hp-value">0/0</div>
+          <div class="stat-label">❤️ Здоровье</div>
+          <div class="health-bar">
+            <div class="health-fill" id="health-fill" style="width: 0%"></div>
+            <div class="bar-text" id="health-text">0/0</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-value" id="energy-value">0/0</div>
+          <div class="stat-label">⚡ Энергия</div>
+          <div class="energy-bar">
+            <div class="energy-fill" id="energy-fill" style="width: 0%"></div>
+            <div class="bar-text" id="energy-text">0/0</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-value" id="armor-value">0</div>
+          <div class="stat-label">🛡️ Броня</div>
+          <div class="armor-bar">
+            <div class="armor-fill" id="armor-fill" style="width: 0%"></div>
+            <div class="bar-text" id="armor-text">0</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-value" id="level-value">1</div>
+          <div class="stat-label">⭐ Уровень</div>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">⚔️ Оружие</div>
+        <div class="stat-value" id="weapon-value" style="font-size: 1rem;">Нет</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">🎯 Статус</div>
+        <div class="stat-value" id="status-value" style="font-size: 1rem; color: var(--success-color);">Жив</div>
+      </div>
     </div>
 
-    <!-- Контейнеры -->
-    <div id="d4-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d4-canvas"></canvas><div class="dice-number" id="d4-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d6-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d6-canvas"></canvas><div class="dice-number" id="d6-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d8-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d8-canvas"></canvas><div class="dice-number" id="d8-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d10-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d10-canvas"></canvas><div class="dice-number" id="d10-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d12-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d12-canvas"></canvas><div class="dice-number" id="d12-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
-    <div id="d20-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d20-canvas"></canvas><div class="dice-number" id="d20-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+    <!-- Вкладка инвентаря -->
+    <div id="inventory-content" class="content-section">
+      <div id="inventory-empty" style="text-align: center; padding: 20px; display: none;">
+        <p>🎒 Инвентарь пуст</p>
+        <p style="font-size: 0.8rem; opacity: 0.7;">Найденные предметы появятся здесь</p>
+      </div>
+      <div class="inventory-grid" id="inventory-grid">
+        <!-- Предметы будут добавляться динамически -->
+      </div>
+    </div>
+
+    <!-- Вкладка кубиков -->
+    <div id="dice-content" class="content-section">
+      <div id="lockMessage" class="lock-message" style="display: none;">
+        ⚠️ Этот кубик недоступен для броска. Бот выберет нужный кубик автоматически.
+      </div>
+
+      <div id="d4-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d4-canvas"></canvas><div class="dice-number" id="d4-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+      <div id="d6-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d6-canvas"></canvas><div class="dice-number" id="d6-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+      <div id="d8-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d8-canvas"></canvas><div class="dice-number" id="d8-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+      <div id="d10-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d10-canvas"></canvas><div class="dice-number" id="d10-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+      <div id="d12-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d12-canvas"></canvas><div class="dice-number" id="d12-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+      <div id="d20-content" class="dice-content"><div class="dice-scene"><canvas class="dice-canvas" id="d20-canvas"></canvas><div class="dice-number" id="d20-number"></div></div><div class="auto-roll-status">🎯 Бросаем кубик...</div></div>
+    </div>
   </div>
 
   <!-- 🎵 звук броска -->
@@ -146,19 +382,247 @@
   </audio>
 
   <script>
-    const tg = window.Telegram.WebApp; tg.expand(); tg.BackButton.hide();
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.BackButton.hide();
+
+    // Основные переменные
+    let characterData = {};
+    let updateInterval;
+
+    // Инициализация приложения
+    document.addEventListener('DOMContentLoaded', function() {
+      initializeTabs();
+      loadCharacterData();
+      startAutoUpdate();
+    });
+
+    // Система вкладок
+    function initializeTabs() {
+      document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', function() {
+          const targetTab = this.getAttribute('data-tab');
+          
+          // Обновляем активные кнопки
+          document.querySelectorAll('.tab-button').forEach(btn => {
+            btn.classList.remove('active');
+          });
+          this.classList.add('active');
+          
+          // Показываем соответствующую вкладку
+          document.querySelectorAll('.content-section').forEach(section => {
+            section.classList.remove('active');
+          });
+          document.getElementById(`${targetTab}-content`).classList.add('active');
+        });
+      });
+    }
+
+    // Загрузка данных персонажа
+    async function loadCharacterData() {
+      try {
+        const chatId = tg.initDataUnsafe.user?.id || tg.initDataUnsafe.start_param;
+        if (!chatId) {
+          console.error('Chat ID not found');
+          return;
+        }
+
+        const response = await fetch(`http://localhost:8080/api/character/${chatId}`);
+        const data = await response.json();
+
+        if (data.success) {
+          characterData = data.data;
+          updateUI();
+        } else {
+          console.error('Failed to load character data:', data.error);
+        }
+      } catch (error) {
+        console.error('Error loading character data:', error);
+      }
+    }
+
+    // Обновление интерфейса
+    function updateUI() {
+      // Обновляем имя персонажа
+      document.getElementById('character-name').textContent = 
+        characterData.name || 'Безымянный герой';
+
+      // Обновляем здоровье
+      const hpPercent = characterData.max_hp > 0 ? (characterData.hp / characterData.max_hp) * 100 : 0;
+      document.getElementById('hp-value').textContent = `${characterData.hp}/${characterData.max_hp}`;
+      document.getElementById('health-fill').style.width = `${hpPercent}%`;
+      document.getElementById('health-text').textContent = `${characterData.hp}/${characterData.max_hp}`;
+
+      // Обновляем энергию
+      const energyPercent = characterData.energy?.max > 0 ? 
+        (characterData.energy.current / characterData.energy.max) * 100 : 0;
+      document.getElementById('energy-value').textContent = 
+        `${characterData.energy?.current || 0}/${characterData.energy?.max || 0}`;
+      document.getElementById('energy-fill').style.width = `${energyPercent}%`;
+      document.getElementById('energy-text').textContent = 
+        `${characterData.energy?.current || 0}/${characterData.energy?.max || 0}`;
+
+      // Обновляем броню
+      const armorPercent = characterData.max_armor > 0 ? 
+        (characterData.armor / characterData.max_armor) * 100 : 0;
+      document.getElementById('armor-value').textContent = characterData.armor;
+      document.getElementById('armor-fill').style.width = `${armorPercent}%`;
+      document.getElementById('armor-text').textContent = characterData.armor;
+
+      // Обновляем уровень
+      document.getElementById('level-value').textContent = characterData.level;
+
+      // Обновляем оружие
+      document.getElementById('weapon-value').textContent = characterData.weapon || 'Нет';
+
+      // Обновляем статус
+      const statusElement = document.getElementById('status-value');
+      if (characterData.is_alive) {
+        statusElement.textContent = 'Жив';
+        statusElement.style.color = 'var(--success-color)';
+      } else {
+        statusElement.textContent = 'Мёртв';
+        statusElement.style.color = 'var(--danger-color)';
+      }
+
+      // Обновляем инвентарь
+      updateInventory();
+    }
+
+    // Обновление инвентаря
+    function updateInventory() {
+      const inventoryGrid = document.getElementById('inventory-grid');
+      const emptyMessage = document.getElementById('inventory-empty');
+
+      if (!characterData.inventory || characterData.inventory.length === 0) {
+        inventoryGrid.innerHTML = '';
+        emptyMessage.style.display = 'block';
+        return;
+      }
+
+      emptyMessage.style.display = 'none';
+      inventoryGrid.innerHTML = '';
+
+      characterData.inventory.forEach(item => {
+        const itemElement = document.createElement('div');
+        itemElement.className = `item-card ${item.is_equipped ? 'item-equipped' : ''}`;
+        
+        const icon = getItemIcon(item.type);
+        const equippedBadge = item.is_equipped ? ' ⚔️' : '';
+
+        itemElement.innerHTML = `
+          <div class="item-icon">${icon}</div>
+          <div class="item-name">${item.name}</div>
+          ${item.quantity > 1 ? `<div class="item-quantity">x${item.quantity}</div>` : ''}
+        `;
+
+        itemElement.addEventListener('click', () => showItemDetails(item));
+        inventoryGrid.appendChild(itemElement);
+      });
+    }
+
+    // Получение иконки для предмета
+    function getItemIcon(itemType) {
+      const icons = {
+        'weapon': '⚔️',
+        'armor': '🛡️',
+        'potion': '🧪',
+        'amulet': '📿',
+        'scroll': '📜',
+        'food': '🍖',
+        'key': '🔑',
+        'gem': '💎'
+      };
+      return icons[itemType] || '🎁';
+    }
+
+    // Показ деталей предмета
+    function showItemDetails(item) {
+      tg.showPopup({
+        title: item.name,
+        message: `${item.description || 'Описание отсутствует'}\n\nТип: ${item.type}\nКоличество: ${item.quantity}`,
+        buttons: [
+          { type: 'default', text: 'Использовать', id: 'use' },
+          { type: 'destructive', text: 'Выбросить', id: 'drop' },
+          { type: 'cancel', text: 'Закрыть' }
+        ]
+      }, (buttonId) => {
+        if (buttonId === 'use') {
+          useItem(item.name);
+        } else if (buttonId === 'drop') {
+          dropItem(item.name);
+        }
+      });
+    }
+
+    // Использование предмета
+    async function useItem(itemName) {
+      try {
+        const chatId = tg.initDataUnsafe.user?.id || tg.initDataUnsafe.start_param;
+        const response = await fetch(`http://localhost:8080/api/character/${chatId}/use-item`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ item_name: itemName })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          tg.showAlert('Предмет использован!');
+          loadCharacterData(); // Перезагружаем данные
+        } else {
+          tg.showAlert(`Ошибка: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Error using item:', error);
+        tg.showAlert('Ошибка при использовании предмета');
+      }
+    }
+
+    // Выбрасывание предмета
+    async function dropItem(itemName) {
+      try {
+        const chatId = tg.initDataUnsafe.user?.id || tg.initDataUnsafe.start_param;
+        const response = await fetch(`http://localhost:8080/api/character/${chatId}/item`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ item_name: itemName, quantity: 1 })
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          tg.showAlert('Предмет выброшен');
+          loadCharacterData(); // Перезагружаем данные
+        } else {
+          tg.showAlert(`Ошибка: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Error dropping item:', error);
+        tg.showAlert('Ошибка при выбрасывании предмета');
+      }
+    }
+
+    // Автоматическое обновление данных
+    function startAutoUpdate() {
+      updateInterval = setInterval(loadCharacterData, 5000); // Обновление каждые 5 секунд
+    }
+
+    // Очистка при закрытии
+    window.addEventListener('beforeunload', function() {
+      if (updateInterval) {
+        clearInterval(updateInterval);
+      }
+    });
+
+    // ========== СИСТЕМА КУБИКОВ (существующий код) ==========
     const urlParams = new URLSearchParams(window.location.search);
     const allowedDice = urlParams.get('dice') || 'd20';
 
     const diceColors = {
-      d4: '#6d2f2f',
-      d6: '#ffffff',
-      d8: '#7a5b2f',
-      d10: '#2f5b45',
-      d12: '#5a3f66',
-      d20: '#264056'
+      d4: '#6d2f2f', d6: '#ffffff', d8: '#7a5b2f',
+      d10: '#2f5b45', d12: '#5a3f66', d20: '#264056'
     };
-    const resultColors = {critical:'#ffd700',success:'#ffd700',normal:'#ffa86b',failure:'#ff6b6b'};
 
     const baseOrientations = {
       d4:{x:-0.66,y:-10.21,z:0}, d6:{x:3.14,y:0.01,z:0},
@@ -167,117 +631,161 @@
     };
 
     const diceSound = document.getElementById("dice-sound");
+    let diceInstances = {};
 
     class ModernDice3D {
-      constructor(canvasId,type){
-        this.canvas=document.getElementById(canvasId);
-        this.type=type; this.sides=this.getSidesCount();
-        this.numberElement=document.getElementById(`${type}-number`);
-        this.isRolling=false; this.finalResult=null;
+      constructor(canvasId, type) {
+        this.canvas = document.getElementById(canvasId);
+        this.type = type;
+        this.sides = this.getSidesCount();
+        this.numberElement = document.getElementById(`${type}-number`);
+        this.isRolling = false;
+        this.finalResult = null;
         this.init();
       }
-      getSidesCount(){return {d4:4,d6:6,d8:8,d10:10,d12:12,d20:20}[this.type];}
-      init(){
-        this.scene=new THREE.Scene();
-        this.camera=new THREE.PerspectiveCamera(45,1,0.1,1000);
-        this.camera.position.z=6;
-        this.renderer=new THREE.WebGLRenderer({canvas:this.canvas,antialias:true,alpha:true});
-        this.renderer.setSize(220,220);
-        this.scene.add(new THREE.AmbientLight(0xffffff,0.6));
-        const dl=new THREE.DirectionalLight(0xffffff,0.8); dl.position.set(3,5,5); this.scene.add(dl);
-        const material=new THREE.MeshPhongMaterial({color:diceColors[this.type]});
-        const geometry=this.getGeometry();
-        this.dice=new THREE.Mesh(geometry,material);
+
+      getSidesCount() {
+        return {d4:4, d6:6, d8:8, d10:10, d12:12, d20:20}[this.type];
+      }
+
+      init() {
+        this.scene = new THREE.Scene();
+        this.camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+        this.camera.position.z = 6;
+        this.renderer = new THREE.WebGLRenderer({ 
+          canvas: this.canvas, 
+          antialias: true, 
+          alpha: true 
+        });
+        this.renderer.setSize(220, 220);
+        
+        this.scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const dl = new THREE.DirectionalLight(0xffffff, 0.8); 
+        dl.position.set(3, 5, 5); 
+        this.scene.add(dl);
+        
+        const material = new THREE.MeshPhongMaterial({ color: diceColors[this.type] });
+        const geometry = this.getGeometry();
+        this.dice = new THREE.Mesh(geometry, material);
         this.scene.add(this.dice);
+        
         this.animate();
       }
-      getGeometry(){
-        switch(this.type){
-          case'd4':return new THREE.TetrahedronGeometry(2.5);
-          case'd6':return new THREE.BoxGeometry(2.5,2.5,2.5);
-          case'd8':return new THREE.OctahedronGeometry(2.5);
-          case'd10':return new THREE.DodecahedronGeometry(2.3);
-          case'd12':return new THREE.DodecahedronGeometry(2.5);
-          case'd20':return new THREE.IcosahedronGeometry(2.5);
+
+      getGeometry() {
+        switch(this.type) {
+          case 'd4': return new THREE.TetrahedronGeometry(2.5);
+          case 'd6': return new THREE.BoxGeometry(2.5, 2.5, 2.5);
+          case 'd8': return new THREE.OctahedronGeometry(2.5);
+          case 'd10': return new THREE.DodecahedronGeometry(2.3);
+          case 'd12': return new THREE.DodecahedronGeometry(2.5);
+          case 'd20': return new THREE.IcosahedronGeometry(2.5);
         }
       }
-      roll(callback){
-        if(this.isRolling)return;
-        this.isRolling=true;
-        this.finalResult=Math.floor(Math.random()*this.sides)+1;
-        if(this.numberElement){this.numberElement.style.opacity=0;}
-        diceSound.currentTime=0; diceSound.play().catch(()=>{});
-        const base=baseOrientations[this.type];
-        const target={x:base.x,y:base.y,z:base.z};
-        const start={x:this.dice.rotation.x,y:this.dice.rotation.y,z:this.dice.rotation.z};
-        const startTime=Date.now(); const duration=2000;
-        const animateStep=()=>{
-          const t=(Date.now()-startTime)/duration;
-          if(t<1){
-            const eased=this.easeOutCubic(t);
-            this.dice.rotation.x=start.x+(target.x+6*Math.PI-start.x)*eased;
-            this.dice.rotation.y=start.y+(target.y+6*Math.PI-start.y)*eased;
-            this.dice.rotation.z=start.z+(target.z+6*Math.PI-start.z)*eased;
+
+      roll(callback) {
+        if (this.isRolling) return;
+        this.isRolling = true;
+        this.finalResult = Math.floor(Math.random() * this.sides) + 1;
+        
+        if (this.numberElement) {
+          this.numberElement.style.opacity = 0;
+        }
+        
+        diceSound.currentTime = 0;
+        diceSound.play().catch(() => {});
+        
+        const base = baseOrientations[this.type];
+        const target = { x: base.x, y: base.y, z: base.z };
+        const start = { 
+          x: this.dice.rotation.x, 
+          y: this.dice.rotation.y, 
+          z: this.dice.rotation.z 
+        };
+        
+        const startTime = Date.now();
+        const duration = 2000;
+        
+        const animateStep = () => {
+          const t = (Date.now() - startTime) / duration;
+          if (t < 1) {
+            const eased = this.easeOutCubic(t);
+            this.dice.rotation.x = start.x + (target.x + 6 * Math.PI - start.x) * eased;
+            this.dice.rotation.y = start.y + (target.y + 6 * Math.PI - start.y) * eased;
+            this.dice.rotation.z = start.z + (target.z + 6 * Math.PI - start.z) * eased;
             requestAnimationFrame(animateStep);
-          }else{
-            this.dice.rotation.set(target.x,target.y,target.z);
-            this.isRolling=false;
+          } else {
+            this.dice.rotation.set(target.x, target.y, target.z);
+            this.isRolling = false;
             this.showNumber();
-            if(callback)callback(this.finalResult);
+            if (callback) callback(this.finalResult);
           }
         };
         animateStep();
       }
-      showNumber(){
-        if(this.numberElement&&this.finalResult){
-          this.numberElement.textContent=this.finalResult;
-          this.numberElement.style.animation='numberAppear 0.6s ease-out';
-          this.numberElement.style.opacity=1;
-          const percent=(this.finalResult/this.sides)*100;
-          let color=percent>=80?resultColors.critical:percent>=50?resultColors.success:percent>=20?resultColors.normal:resultColors.failure;
-          this.numberElement.style.color=color;
-          this.numberElement.style.textShadow=`0 0 20px ${color}80, 0 0 30px ${color}80`;
+
+      showNumber() {
+        if (this.numberElement && this.finalResult) {
+          this.numberElement.textContent = this.finalResult;
+          this.numberElement.style.animation = 'numberAppear 0.6s ease-out';
+          this.numberElement.style.opacity = 1;
+          
+          const percent = (this.finalResult / this.sides) * 100;
+          let color = percent >= 80 ? '#ffd700' : 
+                     percent >= 50 ? '#ffd700' : 
+                     percent >= 20 ? '#ffa86b' : '#ff6b6b';
+          
+          this.numberElement.style.color = color;
+          this.numberElement.style.textShadow = `0 0 20px ${color}80, 0 0 30px ${color}80`;
         }
       }
-      easeOutCubic(t){return 1-Math.pow(1-t,3);}
-      animate(){requestAnimationFrame(()=>this.animate());this.renderer.render(this.scene,this.camera);}
+
+      easeOutCubic(t) {
+        return 1 - Math.pow(1 - t, 3);
+      }
+
+      animate() {
+        requestAnimationFrame(() => this.animate());
+        this.renderer.render(this.scene, this.camera);
+      }
     }
 
-    let diceInstances={};
-    function initializeDice(){['d4','d6','d8','d10','d12','d20'].forEach(type=>{diceInstances[type]=new ModernDice3D(`${type}-canvas`,type);});}
-    function activateAllowedDice(diceType){
-      document.querySelectorAll('.tab-button').forEach(btn=>{btn.classList.add('locked');btn.classList.remove('active');});
-      document.querySelectorAll('.dice-content').forEach(c=>c.classList.remove('active'));
-      const b=document.querySelector(`[data-tab="${diceType}"]`);
-      const cont=document.getElementById(`${diceType}-content`);
-      if(b&&cont){b.classList.remove('locked');b.classList.add('active');cont.classList.add('active');document.getElementById('lockMessage').style.display='none';}
-    }
-    document.querySelectorAll('.tab-button').forEach(button=>{
-      button.addEventListener('click',()=>{
-        if(button.classList.contains('locked')){
-          document.getElementById('lockMessage').style.display='block';
-          setTimeout(()=>{document.getElementById('lockMessage').style.display='none';},3000); return;
-        }
+    function initializeDice() {
+      ['d4','d6','d8','d10','d12','d20'].forEach(type => {
+        diceInstances[type] = new ModernDice3D(`${type}-canvas`, type);
       });
-    });
+    }
 
-    let autoRollExecuted=false;
-    function autoRollDice(){
-      if(autoRollExecuted)return; autoRollExecuted=true;
-      const diceType=allowedDice;
-      if(diceInstances[diceType]){
-        diceInstances[diceType].roll(finalResult=>{
-          setTimeout(()=>{
-            tg.sendData(JSON.stringify({action:"dice_roll",dice_type:diceType,value:finalResult}));
-            setTimeout(()=>{tg.close();},1500);
-          },1000);
+    let autoRollExecuted = false;
+    function autoRollDice() {
+      if (autoRollExecuted) return;
+      autoRollExecuted = true;
+      
+      const diceType = allowedDice;
+      if (diceInstances[diceType]) {
+        diceInstances[diceType].roll(finalResult => {
+          setTimeout(() => {
+            tg.sendData(JSON.stringify({
+              action: "dice_roll",
+              dice_type: diceType,
+              value: finalResult
+            }));
+            setTimeout(() => {
+              tg.close();
+            }, 1500);
+          }, 1000);
         });
       }
     }
 
-    document.addEventListener('DOMContentLoaded',()=>{
-      initializeDice(); activateAllowedDice(allowedDice);
-      setTimeout(autoRollDice,1000);
+    // Инициализация кубиков при загрузке вкладки
+    document.addEventListener('DOMContentLoaded', () => {
+      initializeDice();
+      
+      // Автобросок только если активна вкладка кубиков
+      if (allowedDice && document.getElementById('dice-content').classList.contains('active')) {
+        setTimeout(autoRollDice, 1000);
+      }
     });
   </script>
 </body>
