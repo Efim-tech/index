@@ -421,49 +421,58 @@
     // Загрузка данных персонажа
    async function loadCharacterData() {
       try {
-          // Получаем chat_id из параметров Telegram Web App
           const tg = window.Telegram.WebApp;
           let chatId = tg.initDataUnsafe.user?.id;
           
-          // Если нет в initData, пробуем из start_param
           if (!chatId && tg.initDataUnsafe.start_param) {
               chatId = tg.initDataUnsafe.start_param;
           }
-
-          console.log('Loading character data for chat ID:', chatId);
           
-          const response = await fetch(`http://localhost:8080/api/character/${chatId}`);
+          if (!chatId) {
+              console.warn('Chat ID not found, using default');
+              chatId = '2147348192';
+          }
+
+          console.log('🔍 Loading character data for chat ID:', chatId);
+          
+          const API_URL = `http://localhost:8080/api/character/${chatId}`;
+          console.log('🔍 API URL:', API_URL);
+          
+          const response = await fetch(API_URL);
+          console.log('🔍 Response status:', response.status);
           
           if (!response.ok) {
               throw new Error(`HTTP error! status: ${response.status}`);
           }
           
           const data = await response.json();
-          console.log('API response:', data);
+          console.log('🔍 API response:', data);
 
           if (data.success) {
               characterData = data.data;
+              console.log('🔍 Character data loaded:', characterData);
               updateUI();
           } else {
-              console.error('Failed to load character data:', data.error);
-              // Показываем сообщение об ошибке
-              tg.showAlert('Не удалось загрузить данные персонажа. Попробуйте позже.');
+              console.error('❌ Failed to load character data:', data.error);
+              tg.showAlert('Не удалось загрузить данные персонажа: ' + data.error);
           }
       } catch (error) {
-          console.error('Error loading character data:', error);
+          console.error('❌ Error loading character data:', error);
           
-          // Показываем пользователю сообщение об ошибке
-          const tg = window.Telegram.WebApp;
-          tg.showAlert('Ошибка подключения к серверу. Проверьте, запущен ли бот.');
+          // Показываем подробную ошибку
+          tg.showAlert(`Ошибка: ${error.message}. Проверьте консоль (F12).`);
           
-          // Для отладки показываем данные по умолчанию
+          // Данные для отладки
           characterData = {
-              name: "Персонаж не загружен",
+              name: "Ошибка загрузки",
               hp: 0,
               max_hp: 0,
               armor: 0,
               energy: { current: 0, max: 0 },
-              inventory: []
+              inventory: [],
+              weapon: "Нет",
+              level: 0,
+              is_alive: true
           };
           updateUI();
       }
@@ -818,6 +827,7 @@
   </script>
 </body>
 </html>
+
 
 
 
