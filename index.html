@@ -419,27 +419,55 @@
     }
 
     // Загрузка данных персонажа
-    async function loadCharacterData() {
+   async function loadCharacterData() {
       try {
-        const chatId = tg.initDataUnsafe.user?.id || tg.initDataUnsafe.start_param;
-        if (!chatId) {
-          console.error('Chat ID not found');
-          return;
-        }
+          // Получаем chat_id из параметров Telegram Web App
+          const tg = window.Telegram.WebApp;
+          let chatId = tg.initDataUnsafe.user?.id;
+          
+          // Если нет в initData, пробуем из start_param
+          if (!chatId && tg.initDataUnsafe.start_param) {
+              chatId = tg.initDataUnsafe.start_param;
+          }
 
-        const response = await fetch(`http://localhost:8080/api/character/${chatId}`);
-        const data = await response.json();
+          console.log('Loading character data for chat ID:', chatId);
+          
+          const response = await fetch(`http://localhost:8080/api/character/${chatId}`);
+          
+          if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          
+          const data = await response.json();
+          console.log('API response:', data);
 
-        if (data.success) {
-          characterData = data.data;
-          updateUI();
-        } else {
-          console.error('Failed to load character data:', data.error);
-        }
+          if (data.success) {
+              characterData = data.data;
+              updateUI();
+          } else {
+              console.error('Failed to load character data:', data.error);
+              // Показываем сообщение об ошибке
+              tg.showAlert('Не удалось загрузить данные персонажа. Попробуйте позже.');
+          }
       } catch (error) {
-        console.error('Error loading character data:', error);
+          console.error('Error loading character data:', error);
+          
+          // Показываем пользователю сообщение об ошибке
+          const tg = window.Telegram.WebApp;
+          tg.showAlert('Ошибка подключения к серверу. Проверьте, запущен ли бот.');
+          
+          // Для отладки показываем данные по умолчанию
+          characterData = {
+              name: "Персонаж не загружен",
+              hp: 0,
+              max_hp: 0,
+              armor: 0,
+              energy: { current: 0, max: 0 },
+              inventory: []
+          };
+          updateUI();
       }
-    }
+  }
 
     // Обновление интерфейса
     function updateUI() {
@@ -790,6 +818,7 @@
   </script>
 </body>
 </html>
+
 
 
 
