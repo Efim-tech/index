@@ -264,17 +264,27 @@
     let autoRollExecuted=false;
     function autoRollDice(){
       if(autoRollExecuted)return; autoRollExecuted=true;
+      
       const diceType=allowedDice;
-      if(diceInstances[diceType]){
-        diceInstances[diceType].roll(finalResult=>{
-          setTimeout(()=>{
-            tg.sendData(JSON.stringify({action:"dice_roll",dice_type:diceType,value:finalResult}));
-            setTimeout(()=>{tg.close();},1500);
-          },1000);
-        });
-      }
-    }
 
+      // ДОБАВЛЯЕМ ЗАДЕРЖКУ ПЕРЕД БРОСКОМ - 2.5 СЕКУНДЫ
+      setTimeout(() => {
+          if (diceInstances[diceType]) {
+              diceInstances[diceType].roll(finalResult => {
+                  setTimeout(() => {
+                      tg.sendData(JSON.stringify({
+                          action: "dice_roll", 
+                          dice_type: diceType, 
+                          value: finalResult
+                      }));
+                      setTimeout(() => {
+                          tg.close();
+                      }, 1500);
+                  }, 1000);
+              });
+          }
+      }, 2500); 
+    }
     document.addEventListener('DOMContentLoaded',()=>{
       initializeDice(); activateAllowedDice(allowedDice);
       setTimeout(autoRollDice,1000);
@@ -282,6 +292,7 @@
   </script>
 </body>
 </html>
+
 
 
 
