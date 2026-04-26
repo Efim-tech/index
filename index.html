@@ -29,7 +29,6 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    /* Фон */
     .background {
       position: fixed;
       top: 0;
@@ -42,7 +41,6 @@
       z-index: 0;
     }
 
-    /* Основной контейнер */
     .app {
       position: relative;
       z-index: 2;
@@ -55,7 +53,6 @@
       padding: 20px 20px 30px;
     }
 
-    /* Название кубика */
     .dice-label {
       font-size: 1.2rem;
       color: #c8963e;
@@ -65,7 +62,6 @@
       opacity: 0.8;
     }
 
-    /* Зона кубика */
     .dice-stage {
       flex: 1;
       display: flex;
@@ -75,7 +71,6 @@
       position: relative;
     }
 
-    /* Изображение-превью */
     .dice-preview {
       width: 100%;
       max-width: 300px;
@@ -86,7 +81,6 @@
       border-radius: 16px;
     }
 
-    /* Видео */
     .dice-video {
       position: absolute;
       width: 100%;
@@ -98,7 +92,6 @@
       border-radius: 16px;
     }
 
-    /* Лоадер */
     .loader {
       position: absolute;
       top: 50%;
@@ -118,26 +111,6 @@
       to { transform: translate(-50%, -50%) rotate(360deg); }
     }
 
-    /* Результат */
-    .result {
-      font-size: 3.2rem;
-      font-weight: bold;
-      color: #ffd700;
-      text-shadow: 0 0 30px rgba(255, 215, 0, 0.7), 0 0 60px rgba(255, 215, 0, 0.3);
-      min-height: 56px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-      letter-spacing: 2px;
-    }
-
-    .result.visible {
-      opacity: 1;
-    }
-
-    /* Кнопка */
     .roll-btn {
       background: linear-gradient(180deg, #c8963e 0%, #7a4f1f 100%);
       border: none;
@@ -163,13 +136,9 @@
       transform: none;
     }
 
-    /* Адаптив */
     @media (max-width: 360px) {
       .dice-preview, .dice-video {
         max-width: 260px;
-      }
-      .result {
-        font-size: 2.6rem;
       }
       .roll-btn {
         padding: 14px 44px;
@@ -208,8 +177,6 @@
       <div class="loader" id="loader"></div>
     </div>
 
-    <div class="result" id="result"></div>
-
     <button class="roll-btn" id="rollButton">
       🎲 Бросить
     </button>
@@ -221,7 +188,6 @@
       tg.expand();
       tg.BackButton.hide();
 
-      // ==================== КОНФИГУРАЦИЯ ====================
       const DICE_CONFIG = {
         d4:  { sides: 4,  preview: './assets/previews/d4.png' },
         d6:  { sides: 6,  preview: './assets/previews/d6.png' },
@@ -233,46 +199,34 @@
 
       const VIDEO_PATH = './assets/videos';
 
-      // ==================== DOM ====================
       const dicePreview = document.getElementById('dicePreview');
       const diceVideo   = document.getElementById('diceVideo');
       const loader      = document.getElementById('loader');
-      const resultEl    = document.getElementById('result');
       const rollBtn     = document.getElementById('rollButton');
       const diceLabel   = document.getElementById('diceLabel');
 
-      // ==================== СОСТОЯНИЕ ====================
       const urlParams = new URLSearchParams(window.location.search);
       const diceType = urlParams.get('dice') || 'd20';
       const config   = DICE_CONFIG[diceType] || DICE_CONFIG.d20;
       let isRolling  = false;
 
-      // ==================== ИНИЦИАЛИЗАЦИЯ ====================
       diceLabel.textContent = diceType.toUpperCase();
       dicePreview.src = config.preview;
 
-      // ==================== БРОСОК ====================
       function roll() {
         if (isRolling) return;
         isRolling = true;
         rollBtn.disabled = true;
 
-        // Генерируем результат
         const result = Math.floor(Math.random() * config.sides) + 1;
         console.log(`🎲 Бросок ${diceType}: ${result}`);
 
-        // Скрываем предыдущее
-        resultEl.classList.remove('visible');
-        resultEl.textContent = '';
         diceVideo.style.display = 'none';
         dicePreview.style.display = 'block';
         loader.style.display = 'block';
 
-        // Путь к видео
         const videoUrl = `${VIDEO_PATH}/${diceType}/${result}.mp4`;
-        console.log(`📹 ${videoUrl}`);
 
-        // Флаг для защиты от двойного срабатывания
         let finished = false;
 
         const onReady = () => {
@@ -290,29 +244,22 @@
           isRolling = false;
           rollBtn.disabled = false;
 
-          // Показываем результат
-          resultEl.textContent = result;
-          resultEl.classList.add('visible');
-
-          // Отправляем боту
           tg.sendData(JSON.stringify({
             action: "dice_roll",
             dice_type: diceType,
             value: result
           }));
 
-          // Возвращаем превью через 1.5 сек
           setTimeout(() => {
             if (!isRolling) {
               diceVideo.style.display = 'none';
               dicePreview.style.display = 'block';
             }
-          }, 1500);
+          }, 1000);
 
-          // Закрываем окно через 2.5 сек
           setTimeout(() => {
             tg.close();
-          }, 2500);
+          }, 2200);
         };
 
         const onError = () => {
@@ -321,17 +268,13 @@
           isRolling = false;
           rollBtn.disabled = false;
 
-          // Показываем результат даже без видео
-          resultEl.textContent = result;
-          resultEl.classList.add('visible');
-
           tg.sendData(JSON.stringify({
             action: "dice_roll",
             dice_type: diceType,
             value: result
           }));
 
-          setTimeout(() => tg.close(), 2500);
+          setTimeout(() => tg.close(), 2200);
         };
 
         const cleanup = () => {
@@ -344,15 +287,12 @@
         diceVideo.addEventListener('ended', onEnd);
         diceVideo.addEventListener('error', onError);
 
-        // Загружаем видео
         diceVideo.src = videoUrl;
         diceVideo.load();
       }
 
-      // ==================== КНОПКА ====================
       rollBtn.addEventListener('click', roll);
 
-      // Поддержка пробела (для десктопа)
       document.addEventListener('keydown', (e) => {
         if (e.code === 'Space' && !isRolling) {
           e.preventDefault();
@@ -360,7 +300,6 @@
         }
       });
 
-      // ==================== АВТО-БРОСОК ====================
       const autoRoll = urlParams.get('auto');
       if (autoRoll !== 'false') {
         setTimeout(roll, 1200);
