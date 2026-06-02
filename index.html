@@ -157,23 +157,33 @@
         const onEnd = () => {
           cleanup();
           isRolling = false;
-
+        
+          // Отправляем результат в бот
           tg.sendData(JSON.stringify({
             action: "dice_roll",
             dice_type: diceType,
             value: result
           }));
-
+        
+          // 🔥 НОВОЕ: Сохраняем в localStorage, что нужно обновить данные
+          localStorage.setItem('need_refresh_character', 'true');
+          localStorage.setItem('last_dice_result', JSON.stringify({
+            dice_type: diceType,
+            value: result,
+            timestamp: Date.now()
+          }));
+        
           setTimeout(() => {
             if (!isRolling) {
               diceVideo.style.display = 'none';
               dicePreview.style.display = 'block';
             }
           }, 600);
-
+        
+          // 🔥 УВЕЛИЧИВАЕМ ЗАДЕРЖКУ ДО 3 СЕКУНД (было 2)
           setTimeout(() => {
             tg.close();
-          }, 2000);
+          }, 3000);
         };
 
         const onError = () => {
