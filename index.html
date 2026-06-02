@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Game Master - Бросок кубика 🎲</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: url("./assets/wood.jpg") no-repeat center center fixed;
+      background-size: cover;
+      opacity: 0.2;
+      z-index: 0;
+    }
+
+    .dice-stage {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .dice-preview {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .dice-video {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: none;
+    }
+
+    .loader {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      border: 3px solid rgba(200, 150, 62, 0.15);
+      border-top-color: #c8963e;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+      z-index: 20;
+    }
+
+    @keyframes spin {
+      to { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="background"></div>
+
+  <div class="dice-stage">
+    <img
+      id="dicePreview"
+      class="dice-preview"
+      src="./assets/previews/d20.png"
+      alt="Кубик"
+    >
+    <video
+      id="diceVideo"
+      class="dice-video"
+      playsinline
+      muted
+      preload="none"
+      disableRemotePlayback
+    ></video>
+    <div class="loader" id="loader"></div>
+  </div>
+
+  <script>
+    (function() {
+      const tg = window.Telegram.WebApp;
+      tg.expand();
+      tg.BackButton.hide();
+
+      const DICE_CONFIG = {
+        d4:  { sides: 4,  preview: './assets/previews/d4.png' },
+        d6:  { sides: 6,  preview: './assets/previews/d6.png' },
+        d8:  { sides: 8,  preview: './assets/previews/d8.png' },
+        d10: { sides: 10, preview: './assets/previews/d10.png' },
+        d12: { sides: 12, preview: './assets/previews/d12.png' },
+        d20: { sides: 20, preview: './assets/previews/d20.png' }
+      };
+
+      const VIDEO_PATH = './assets/videos';
+
+      const dicePreview = document.getElementById('dicePreview');
+      const diceVideo   = document.getElementById('diceVideo');
+      const loader      = document.getElementById('loader');
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const diceType = urlParams.get('dice') || 'd20';
+      const config   = DICE_CONFIG[diceType] || DICE_CONFIG.d20;
+      let isRolling  = false;
+
+      dicePreview.src = config.preview;
+
+      function roll() {
+        if (isRolling) return;
+        isRolling = true;
+
+        const result = Math.floor(Math.random() * config.sides) + 1;
+
+        diceVideo.style.display = 'none';
+        dicePreview.style.display = 'block';
+        loader.style.display = 'block';
+
+        const videoUrl = `${VIDEO_PATH}/${diceType}/${result}.mp4`;
+
+        let finished = false;
+
+        const onReady = () => {
+          if (finished) return;
+          finished = true;
+
+          loader.style.display = 'none';
+          dicePreview.style.display = 'none';
+          diceVideo.style.display = 'block';
+          diceVideo.play().catch(() => {});
+        };
+
+        const onEnd = () => {
+          cleanup();
+          isRolling = false;
+
+          tg.sendData(JSON.stringify({
+            action: "dice_roll",
+            dice_type: diceType,
+            value: result
+          }));
+
+          setTimeout(() => {
+            if (!isRolling) {
+              diceVideo.style.display = 'none';
+              dicePreview.style.display = 'block';
+            }
+          }, 600);
+
+          setTimeout(() => {
+            tg.close();
+          }, 2000);
+        };
+
+        const onError = () => {
+          cleanup();
+          loader.style.display = 'none';
+          isRolling = false;
+
+          tg.sendData(JSON.stringify({
+            action: "dice_roll",
+            dice_type: diceType,
+            value: result
+          }));
+
+          setTimeout(() => tg.close(), 2000);
+        };
+
+        const cleanup = () => {
+          diceVideo.removeEventListener('canplaythrough', onReady);
+          diceVideo.removeEventListener('ended', onEnd);
+          diceVideo.removeEventListener('error', onError);
+        };
+
+        diceVideo.addEventListener('canplaythrough', onReady);
+        diceVideo.addEventListener('ended', onEnd);
+        diceVideo.addEventListener('error', onError);
+
+        diceVideo.src = videoUrl;
+        diceVideo.load();
+      }
+
+      const autoRoll = urlParams.get('auto');
+      if (autoRoll !== 'false') {
+        setTimeout(roll, 800);
+      }
+
+      console.log(`🎲 Game Master готов. Кубик: ${diceType}`);
+    })();
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
