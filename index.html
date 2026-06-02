@@ -164,6 +164,14 @@
             value: result
           }));
 
+          // Сохраняем флаг, что нужно обновить данные
+          localStorage.setItem('need_refresh_character', 'true');
+          localStorage.setItem('last_dice_result', JSON.stringify({
+            dice_type: diceType,
+            value: result,
+            timestamp: Date.now()
+          }));
+
           setTimeout(() => {
             if (!isRolling) {
               diceVideo.style.display = 'none';
