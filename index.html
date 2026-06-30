@@ -135,38 +135,34 @@
       // 🔥 ФУНКЦИЯ ОТПРАВКИ ДАННЫХ
       // ============================================================
       function sendDataToBot(action, diceType, value) {
-        const data = JSON.stringify({
-          action: action,
-          dice_type: diceType,
-          value: value
-        });
-        
-        console.log("📤 Sending data:", data);
-        
-        try {
-          // Основной способ
-          tg.sendData(data);
-          console.log("✅ Data sent via sendData");
+          const data = JSON.stringify({
+              action: action,
+              dice_type: diceType,
+              value: value
+          });
           
-          // 🔥 ДОПОЛНИТЕЛЬНО: пробуем отправить через WebView
-          if (window.Telegram && window.Telegram.WebView) {
-            window.Telegram.WebView.postEvent('web_app_data_send', { data: data });
-            console.log("✅ Data sent via postEvent");
-          }
-        } catch (e) {
-          console.error("❌ Failed to send data:", e);
+          console.log("📤 Sending data:", data);
           
-          // 🔥 ЗАПАСНОЙ ВАРИАНТ: через обычное сообщение
           try {
-            // Пробуем через tg.sendMessage (если поддерживается)
-            if (tg.sendMessage) {
-              tg.sendMessage(data);
-              console.log("✅ Data sent via sendMessage");
-            }
-          } catch (e2) {
-            console.error("❌ All send methods failed:", e2);
+              // 🔥 ИСПОЛЬЗУЕМ tg.sendMessage() вместо tg.sendData()
+              if (tg.sendMessage) {
+                  tg.sendMessage(data);
+                  console.log("✅ Data sent via sendMessage");
+              } else {
+                  // Запасной вариант
+                  tg.sendData(data);
+                  console.log("✅ Data sent via sendData (fallback)");
+              }
+          } catch (e) {
+              console.error("❌ Failed to send data:", e);
+              
+              // Последний запасной вариант
+              try {
+                  tg.sendData(data);
+              } catch (e2) {
+                  console.error("❌ All send methods failed:", e2);
+              }
           }
-        }
       }
 
       // ============================================================
