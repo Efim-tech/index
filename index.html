@@ -104,7 +104,6 @@
 
   <script>
     (function() {
-      // Инициализируем WebApp
       const tg = window.Telegram.WebApp;
       tg.expand();
       tg.BackButton.hide();
@@ -130,48 +129,6 @@
       let isRolling  = false;
 
       dicePreview.src = config.preview;
-
-      // ============================================================
-      // 🔥 ФУНКЦИЯ ОТПРАВКИ ДАННЫХ
-      // ============================================================
-      function sendDataToBot(action, diceType, value) {
-          const data = JSON.stringify({
-              action: action,
-              dice_type: diceType,
-              value: value
-          });
-          
-          console.log("📤 Sending data:", data);
-          
-          try {
-              // 🔥 ИСПОЛЬЗУЕМ tg.sendMessage() вместо tg.sendData()
-              if (tg.sendMessage) {
-                  tg.sendMessage(data);
-                  console.log("✅ Data sent via sendMessage");
-              } else {
-                  // Запасной вариант
-                  tg.sendData(data);
-                  console.log("✅ Data sent via sendData (fallback)");
-              }
-          } catch (e) {
-              console.error("❌ Failed to send data:", e);
-              
-              // Последний запасной вариант
-              try {
-                  tg.sendData(data);
-              } catch (e2) {
-                  console.error("❌ All send methods failed:", e2);
-              }
-          }
-      }
-
-      // ============================================================
-      // 🔥 ОТПРАВЛЯЕМ КОМАНДУ НА УДАЛЕНИЕ КНОПКИ ПРИ ЗАГРУЗКЕ
-      // ============================================================
-      setTimeout(function() {
-        console.log("🗑️ Sending delete button command...");
-        sendDataToBot('delete_button', diceType, 0);
-      }, 300);
 
       function roll() {
         if (isRolling) return;
@@ -201,11 +158,14 @@
           cleanup();
           isRolling = false;
         
-          console.log(`🎲 Dice result: ${diceType} = ${result}`);
-          
-          // 🔥 ОТПРАВЛЯЕМ РЕЗУЛЬТАТ
-          sendDataToBot('dice_roll', diceType, result);
+          // Отправляем результат в бот
+          tg.sendData(JSON.stringify({
+            action: "dice_roll",
+            dice_type: diceType,
+            value: result
+          }));
         
+          // 🔥 НОВОЕ: Сохраняем в localStorage, что нужно обновить данные
           localStorage.setItem('need_refresh_character', 'true');
           localStorage.setItem('last_dice_result', JSON.stringify({
             dice_type: diceType,
@@ -220,6 +180,7 @@
             }
           }, 600);
         
+          // 🔥 УВЕЛИЧИВАЕМ ЗАДЕРЖКУ ДО 3 СЕКУНД (было 2)
           setTimeout(() => {
             tg.close();
           }, 3000);
@@ -230,7 +191,11 @@
           loader.style.display = 'none';
           isRolling = false;
 
-          sendDataToBot('dice_roll', diceType, result);
+          tg.sendData(JSON.stringify({
+            action: "dice_roll",
+            dice_type: diceType,
+            value: result
+          }));
 
           setTimeout(() => tg.close(), 2000);
         };
@@ -259,6 +224,50 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
